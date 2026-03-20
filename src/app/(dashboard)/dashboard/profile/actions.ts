@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 export async function getProfile() {
     const supabase = await createClient()
@@ -53,71 +55,8 @@ export async function updateProfile(formData: FormData) {
         return { error: error.message }
     }
 
+    revalidatePath('/', 'layout')
     return { success: true }
-}
-
-export async function uploadAvatar(formData: FormData) {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        return { error: 'Not authenticated' }
-    }
-
-    const file = formData.get('avatar') as File
-
-    if (!file || file.size === 0) {
-        return { error: 'No file selected' }
-    }
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-    if (!allowedTypes.includes(file.type)) {
-        return { error: 'Invalid file type. Please upload a JPEG, PNG, WebP, or GIF image.' }
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-        return { error: 'File too large. Maximum size is 2MB.' }
-    }
-
-    // Create a unique file path for this user
-    const fileExtension = file.name.split('.').pop()
-    const filePath = `${user.id}/avatar.${fileExtension}`
-
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-            upsert: true, // overwrite if exists
-        })
-
-    if (uploadError) {
-        return { error: uploadError.message }
-    }
-
-    // Get the public URL
-    const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath)
-
-    // Update profile with new avatar URL
-    const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-            avatar_url: urlData.publicUrl,
-            updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id)
-
-    if (updateError) {
-        return { error: updateError.message }
-    }
-
-    return { success: true, avatarUrl: urlData.publicUrl }
 }
 
 export async function deleteAvatar() {
@@ -155,5 +94,12 @@ export async function deleteAvatar() {
         return { error: error.message }
     }
 
+    revalidatePath('/', 'layout')
     return { success: true }
+}
+
+export async function signOutUser() {
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+    redirect('/login')
 }

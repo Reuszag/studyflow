@@ -1,65 +1,188 @@
-import Image from "next/image";
+import Link from 'next/link'
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+export default function LandingPage() {
+    return (
+        <div className="min-h-screen bg-[#0a0c12] text-white overflow-hidden">
+
+            {/* Background glow orbs */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div
+                    className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full opacity-20"
+                    style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }}
+                />
+                <div
+                    className="absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full opacity-10"
+                    style={{ background: 'radial-gradient(circle, #2563eb 0%, transparent 70%)' }}
+                />
+                <div
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] opacity-10"
+                    style={{ background: 'radial-gradient(ellipse, #7c3aed 0%, transparent 70%)' }}
+                />
+            </div>
+
+            {/* Navigation */}
+            <nav className="relative z-10 flex items-center justify-between px-8 py-5 max-w-7xl mx-auto">
+                <div className="flex items-center gap-2.5">
+                    <span className="text-xl font-bold tracking-tight">📚 StudyFlow</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/login"
+                        className="text-sm text-gray-400 hover:text-white px-4 py-2 rounded-xl transition-colors"
+                    >
+                        Sign in
+                    </Link>
+                    <Link
+                        href="/register"
+                        className="text-sm font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl transition-all duration-200 shadow-lg shadow-violet-900/30"
+                    >
+                        Get started free
+                    </Link>
+                </div>
+            </nav>
+
+            {/* Hero */}
+            <section className="relative z-10 max-w-5xl mx-auto px-8 pt-24 pb-32 text-center">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-8">
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                    Built for focused students
+                </div>
+
+                <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-tight mb-6">
+                    Study smarter,
+                    <br />
+                    <span
+                        className="bg-clip-text text-transparent"
+                        style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #818cf8, #60a5fa)' }}
+                    >
+                        not harder.
+                    </span>
+                </h1>
+
+                <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                    StudyFlow combines a Pomodoro timer, task management, and progress tracking in one
+                    beautiful dashboard — helping you build better study habits every day.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link
+                        href="/register"
+                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold px-8 py-3.5 rounded-2xl text-base transition-all duration-200 shadow-xl shadow-violet-900/30"
+                    >
+                        Start for free
+                    </Link>
+                    <Link
+                        href="/login"
+                        className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-semibold px-8 py-3.5 rounded-2xl text-base transition-all duration-200"
+                    >
+                        Sign in
+                    </Link>
+                </div>
+            </section>
+
+            {/* Features */}
+            <section className="relative z-10 max-w-6xl mx-auto px-8 pb-32">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl font-bold text-white mb-3">Everything you need to focus</h2>
+                    <p className="text-gray-500">Designed around how you actually study.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[
+                        {
+                            icon: '⏱️',
+                            color: '#a78bfa',
+                            glow: '#7c3aed',
+                            title: 'Pomodoro Timer',
+                            desc: 'Structured 25-minute focus sessions with short and long breaks. Auto-advance between modes so you never lose momentum.',
+                        },
+                        {
+                            icon: '✅',
+                            color: '#34d399',
+                            glow: '#059669',
+                            title: 'Task Manager',
+                            desc: 'Capture everything you need to do. Break assignments into steps and check them off as you go.',
+                        },
+                        {
+                            icon: '📊',
+                            color: '#60a5fa',
+                            glow: '#2563eb',
+                            title: 'Progress Tracking',
+                            desc: 'See your daily streaks, total focus time, and session history. Know exactly how consistent you are.',
+                        },
+                    ].map(({ icon, color, glow, title, desc }) => (
+                        <div
+                            key={title}
+                            className="group relative bg-[#0f1117] border border-white/5 rounded-2xl p-7 hover:border-white/10 transition-all duration-300"
+                        >
+                            <div
+                                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                                style={{ background: `radial-gradient(circle at 30% 20%, ${glow}15 0%, transparent 60%)` }}
+                            />
+                            <div
+                                className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-5 border"
+                                style={{ background: `${glow}20`, borderColor: `${color}30` }}
+                            >
+                                {icon}
+                            </div>
+                            <h3 className="font-bold text-white text-lg mb-2">{title}</h3>
+                            <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* How it works */}
+            <section className="relative z-10 max-w-4xl mx-auto px-8 pb-32">
+                <div className="text-center mb-14">
+                    <h2 className="text-3xl font-bold text-white mb-3">How it works</h2>
+                    <p className="text-gray-500">Three steps to your best study session yet.</p>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    {[
+                        { step: '01', title: 'Create your account', desc: 'Sign up in seconds — no credit card, no setup hassle.' },
+                        { step: '02', title: 'Start a Focus session', desc: 'Pick your task, start the Pomodoro timer, and dive in. Notifications fire when it\'s time to break.' },
+                        { step: '03', title: 'Track your progress', desc: 'Watch your session count and streak grow. Small consistent wins compound fast.' },
+                    ].map(({ step, title, desc }) => (
+                        <div
+                            key={step}
+                            className="flex items-start gap-6 bg-[#0f1117] border border-white/5 rounded-2xl p-6"
+                        >
+                            <span
+                                className="text-2xl font-black shrink-0 bg-clip-text text-transparent leading-none mt-0.5"
+                                style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+                            >
+                                {step}
+                            </span>
+                            <div>
+                                <h3 className="font-bold text-white mb-1">{title}</h3>
+                                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* CTA */}
+            <section className="relative z-10 max-w-3xl mx-auto px-8 pb-32 text-center">
+                <div className="bg-gradient-to-br from-violet-900/30 to-indigo-900/20 border border-violet-500/20 rounded-3xl p-12">
+                    <h2 className="text-3xl font-bold text-white mb-3">Ready to supercharge your studies?</h2>
+                    <p className="text-gray-400 mb-8">Join students already using StudyFlow to stay focused and on track.</p>
+                    <Link
+                        href="/register"
+                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold px-10 py-3.5 rounded-2xl text-base transition-all duration-200 shadow-xl shadow-violet-900/40"
+                    >
+                        Get started
+                    </Link>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="relative z-10 border-t border-white/5 px-8 py-8 text-center">
+                <p className="text-gray-700 text-sm">© 2026 StudyFlow. Built to help you focus.</p>
+            </footer>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    )
 }

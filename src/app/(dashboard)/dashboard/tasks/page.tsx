@@ -1,0 +1,35 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import TaskBoard from './TaskBoard'
+
+export default async function TasksPage() {
+    const supabase = await createClient()
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login')
+    }
+
+    // Fetch tasks ordered by created_at descending
+    const { data: tasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+    return (
+        <div className="p-8 max-w-5xl mx-auto h-full flex flex-col">
+            <div className="mb-8 flex items-center justify-between shrink-0">
+                <div>
+                    <h2 className="text-3xl font-bold text-white mb-1">Tasks</h2>
+                    <p className="text-gray-500">Manage your to-dos and assignments</p>
+                </div>
+            </div>
+
+            <TaskBoard initialTasks={tasks || []} />
+        </div>
+    )
+}

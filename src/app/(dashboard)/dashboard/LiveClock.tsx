@@ -23,7 +23,7 @@ export default function LiveClock({ timezone }: { timezone: string }) {
     }, [timezone])
 
     return (
-        <span className="text-s text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+        <span className="text-xs text-gray-500 bg-white/5 px-2.5 py-1 rounded-full font-mono border border-white/5">
             🕐 {time}
         </span>
     )

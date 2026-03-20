@@ -1,0 +1,34 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import StorageClient from './StorageClient'
+
+export default async function StoragePage() {
+    const supabase = await createClient()
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login')
+    }
+
+    const { data: documents } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+    return (
+        <div className="p-8 max-w-5xl mx-auto h-full flex flex-col">
+            <div className="mb-8 flex items-center justify-between shrink-0">
+                <div>
+                    <h2 className="text-3xl font-bold text-white mb-1">Storage</h2>
+                    <p className="text-gray-500">Securely store and access your personal documents</p>
+                </div>
+            </div>
+
+            <StorageClient initialDocuments={documents || []} />
+        </div>
+    )
+}
