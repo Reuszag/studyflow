@@ -29,10 +29,10 @@ export default async function ProfilePage() {
 
     return (
         <div className="p-8 max-w-lg mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-1">Your Profile</h2>
-            <p className="text-gray-500 mb-8">Update your personal information below.</p>
+            <h2 className="text-3xl font-bold mb-1" style={{ color: 'var(--heading-text)' }}>Your Profile</h2>
+            <p className="mb-8" style={{ color: 'var(--muted-text)' }}>Update your personal information below.</p>
 
-            <div className="bg-[#161822] border border-white/5 rounded-2xl shadow p-8">
+            <div className="rounded-2xl shadow p-8" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                 <ProfileForm profile={profileData} email={user.email || ''} />
             </div>
         </div>

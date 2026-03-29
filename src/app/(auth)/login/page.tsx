@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import ThemeToggle from '@/app/components/ThemeToggle'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -35,16 +36,51 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-                <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
-                    StudyFlow
+        <div
+            className="min-h-screen flex items-center justify-center relative overflow-hidden transition-colors duration-300"
+            style={{ background: 'var(--background)' }}
+        >
+            {/* Background glow orbs */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div
+                    className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-20"
+                    style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }}
+                />
+                <div
+                    className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full opacity-10"
+                    style={{ background: 'radial-gradient(circle, #2563eb 0%, transparent 70%)' }}
+                />
+            </div>
+
+            {/* Theme toggle */}
+            <div className="absolute top-5 right-6 z-20">
+                <ThemeToggle />
+            </div>
+
+            {/* Card */}
+            <div
+                className="relative z-10 w-full max-w-md rounded-2xl shadow-2xl p-8 transition-colors duration-300"
+                style={{
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--card-border)',
+                }}
+            >
+                <h1
+                    className="text-3xl font-bold text-center mb-1"
+                    style={{ color: 'var(--foreground)' }}
+                >
+                    📚 StudyFlow
                 </h1>
-                <p className="text-center text-gray-500 mb-8">Sign in to your account</p>
+                <p className="text-center mb-8" style={{ color: 'var(--muted-text)' }}>
+                    Sign in to your account
+                </p>
 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                            className="block text-sm font-medium mb-1"
+                            style={{ color: 'var(--label-text)' }}
+                        >
                             Email
                         </label>
                         <input
@@ -52,13 +88,21 @@ export default function LoginPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-300"
+                            style={{
+                                background: 'var(--input-bg)',
+                                border: '1px solid var(--input-border)',
+                                color: 'var(--input-text)',
+                            }}
                             placeholder="you@example.com"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                            className="block text-sm font-medium mb-1"
+                            style={{ color: 'var(--label-text)' }}
+                        >
                             Password
                         </label>
                         <input
@@ -66,27 +110,39 @@ export default function LoginPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-300"
+                            style={{
+                                background: 'var(--input-bg)',
+                                border: '1px solid var(--input-border)',
+                                color: 'var(--input-text)',
+                            }}
                             placeholder="••••••••"
                         />
                     </div>
 
                     {error && (
-                        <p className="text-red-500 text-sm">{error}</p>
+                        <p className="text-red-400 text-sm">{error}</p>
                     )}
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
+                        className="w-full text-white py-2.5 rounded-lg font-semibold disabled:opacity-50 transition-all duration-200 cursor-pointer shadow-lg shadow-violet-900/20"
+                        style={{
+                            background: 'linear-gradient(135deg, var(--accent), #4f46e5)',
+                        }}
                     >
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
 
-                <p className="text-center text-gray-500 text-sm mt-6">
+                <p className="text-center text-sm mt-6" style={{ color: 'var(--muted-text)' }}>
                     Don&apos;t have an account?{' '}
-                    <Link href="/register" className="text-blue-600 hover:underline font-medium">
+                    <Link
+                        href="/register"
+                        className="font-medium hover:underline"
+                        style={{ color: 'var(--accent)' }}
+                    >
                         Register
                     </Link>
                 </p>
@@ -94,3 +150,4 @@ export default function LoginPage() {
         </div>
     )
 }
+

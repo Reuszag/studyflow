@@ -27,7 +27,8 @@ export default function ProfileDropdown({ avatarUrl, fullName }: ProfileDropdown
         <div className="relative" ref={menuRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="block w-8 h-8 rounded-full overflow-hidden border-2 border-white/10 hover:border-violet-400 focus:border-violet-400 focus:outline-none transition-all duration-200"
+                className="block w-8 h-8 rounded-full overflow-hidden border-2 hover:border-violet-400 focus:border-violet-400 focus:outline-none transition-all duration-200"
+                style={{ borderColor: 'var(--card-border-hover)' }}
                 title="Account Menu"
             >
                 {avatarUrl ? (
@@ -40,20 +41,27 @@ export default function ProfileDropdown({ avatarUrl, fullName }: ProfileDropdown
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-[#1e2030] border border-white/10 rounded-xl shadow-xl py-1 z-50">
-                    <div className="px-4 py-2 border-b border-white/5 mb-1">
-                        <p className="text-sm font-medium text-gray-200 truncate">{fullName}</p>
+                <div
+                    className="absolute right-0 mt-2 w-48 rounded-xl shadow-xl py-1 z-50"
+                    style={{
+                        background: 'var(--dropdown-bg)',
+                        border: '1px solid var(--dropdown-border)',
+                    }}
+                >
+                    <div className="px-4 py-2 mb-1" style={{ borderBottom: '1px solid var(--card-border)' }}>
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--body-text)' }}>{fullName}</p>
                     </div>
                     
                     <Link
                         href="/dashboard/profile"
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 text-sm transition-colors"
+                        style={{ color: 'var(--subtle-text)' }}
                     >
                         <span>👤</span> Profile Settings
                     </Link>
                     
-                    <div className="h-px bg-white/10 my-1"></div>
+                    <div className="h-px my-1" style={{ background: 'var(--dropdown-border)' }}></div>
                     
                     <button
                         onClick={async () => {

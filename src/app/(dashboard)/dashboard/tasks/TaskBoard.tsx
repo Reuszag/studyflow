@@ -140,10 +140,10 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
     ]
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-[#0f1117]">
+        <div className="flex-1 flex flex-col min-h-0 transition-colors duration-300" style={{ background: 'var(--background)' }}>
 
             {/* Top Bar Form */}
-            <div className="bg-[#161822] border border-white/5 rounded-2xl p-6 shadow-xl mb-6 shrink-0">
+            <div className="rounded-2xl p-6 shadow-xl mb-6 shrink-0" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                 <form
                     ref={formRef}
                     action={handleAddTask}
@@ -154,7 +154,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                         name="title"
                         placeholder="What needs to be done?"
                         required
-                        className="flex-1 bg-transparent border-none outline-none px-4 py-2 text-gray-200 placeholder:text-gray-500 font-medium"
+                        className="flex-1 bg-transparent border-none outline-none px-4 py-2 placeholder:text-gray-500 font-medium"
+                        style={{ color: 'var(--foreground)' }}
                     />
                     <div className="flex items-center gap-3 px-2 pb-3 sm:pb-0 shrink-0 border-t border-white/5 sm:border-none pt-3 sm:pt-0 mt-2 sm:mt-0 relative z-10 w-full sm:w-auto">
 
@@ -164,7 +165,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                             <button
                                 type="button"
                                 onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                                className={`w-full flex items-center justify-between bg-[#161822] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-semibold hover:bg-white/5 hover:border-white/20 transition-all shadow-sm group ${plannedDate ? 'text-blue-400' : 'text-gray-300'}`}
+                                className={`w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all shadow-sm group ${plannedDate ? 'text-blue-400' : ''}`}
+                                style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border-hover)', color: plannedDate ? undefined : 'var(--body-text)' }}
                             >
                                 <span className="flex items-center gap-2 truncate">
                                     <span className="opacity-80 text-[12px]">📅</span>
@@ -175,7 +177,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                             {isCalendarOpen && (
                                 <>
                                     <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsCalendarOpen(false)}></div>
-                                    <div className="absolute top-[calc(100%+8px)] left-0 w-64 bg-[#1a1c28]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                                    <div className="absolute top-[calc(100%+8px)] left-0 w-64 backdrop-blur-xl rounded-xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2" style={{ background: 'var(--card-bg-alt)', border: '1px solid var(--dropdown-border)' }}>
 
                                         {/* Calendar Header */}
                                         <div className="flex items-center justify-between mb-4">
@@ -186,7 +188,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                             >
                                                 ◀
                                             </button>
-                                            <div className="text-sm font-semibold text-gray-200">
+                                            <div className="text-sm font-semibold" style={{ color: 'var(--body-text)' }}>
                                                 {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                                             </div>
                                             <button
@@ -256,9 +258,10 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                             <button
                                 type="button"
                                 onClick={() => setIsPriorityOpen(!isPriorityOpen)}
-                                className={`w-full flex items-center justify-between bg-[#161822] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-semibold hover:bg-white/5 hover:border-white/20 transition-all shadow-sm group ${formPriority === 'high' ? 'text-red-400' :
+                                className={`w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all shadow-sm group ${formPriority === 'high' ? 'text-red-400' :
                                     formPriority === 'medium' ? 'text-orange-400' : 'text-emerald-400'
                                     }`}
+                                style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border-hover)' }}
                             >
                                 <span className="flex items-center gap-2 truncate">
                                     <span className="opacity-80 text-[12px]">{formPriority === 'high' ? '🔥' : formPriority === 'medium' ? '⚡' : '🌱'}</span>
@@ -270,7 +273,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                             {isPriorityOpen && (
                                 <>
                                     <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsPriorityOpen(false)}></div>
-                                    <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[130px] bg-[#1a1c28]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
+                                    <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[130px] backdrop-blur-xl rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2" style={{ background: 'var(--card-bg-alt)', border: '1px solid var(--dropdown-border)' }}>
                                         {[
                                             { id: 'low', label: 'Low', icon: '🌱', color: 'text-emerald-400' },
                                             { id: 'medium', label: 'Medium', icon: '⚡', color: 'text-orange-400' },
@@ -310,13 +313,14 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                     return (
                         <div
                             key={col.id}
-                            className="flex-1 flex flex-col bg-[#161822] border border-white/5 rounded-2xl overflow-hidden shadow-xl"
+                            className="flex-1 flex flex-col rounded-2xl overflow-hidden shadow-xl"
+                            style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, col.id)}
                         >
                             {/* Column Header */}
-                            <div className="p-5 border-b border-white/5 bg-[#1a1c28] shrink-0 flex items-center justify-between">
-                                <h3 className="font-semibold text-white tracking-tight flex items-center gap-2">
+                            <div className="p-5 shrink-0 flex items-center justify-between" style={{ background: 'var(--card-bg-alt)', borderBottom: '1px solid var(--card-border)' }}>
+                                <h3 className="font-semibold tracking-tight flex items-center gap-2" style={{ color: 'var(--heading-text)' }}>
                                     <div className={`w-2 h-2 rounded-full bg-${col.color}-500 shadow-[0_0_8px_rgba(var(--color-${col.color}-500),0.5)]`}></div>
                                     {col.title}
                                 </h3>
@@ -342,8 +346,9 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                             onDragEnd={handleDragEnd}
                                             className={`group relative flex flex-col gap-3 p-4 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing hover:-translate-y-0.5 shadow-md ${task.status === 'completed'
                                                 ? 'bg-white/[0.02] border-white/5 opacity-70 hover:opacity-100'
-                                                : 'bg-[#1a1c28] border-white/10 hover:border-violet-500/40 hover:shadow-violet-900/20'
+                                                : 'border-white/10 hover:border-violet-500/40 hover:shadow-violet-900/20'
                                                 }`}
+                                            style={task.status !== 'completed' ? { background: 'var(--card-bg-alt)' } : undefined}
                                         >
                                             <div className="flex items-start gap-3">
                                                 <button

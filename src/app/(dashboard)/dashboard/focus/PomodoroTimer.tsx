@@ -204,10 +204,10 @@ export default function PomodoroTimer() {
         <div className="flex flex-col items-center justify-center min-h-full py-16 px-6 relative">
             {/* Settings Modal overlay */}
             {showSettings && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#0a0c12]/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="w-full max-w-sm bg-[#161822] border border-white/10 rounded-3xl p-6 shadow-2xl">
+                <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4 animate-in fade-in duration-200" style={{ background: 'color-mix(in srgb, var(--background-deep) 80%, transparent)' }}>
+                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" style={{ background: 'var(--card-bg)', border: '1px solid var(--dropdown-border)' }}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-white">Timer Settings</h2>
+                            <h2 className="text-xl font-bold" style={{ color: 'var(--heading-text)' }}>Timer Settings</h2>
                             <button 
                                 onClick={() => setShowSettings(false)}
                                 className="text-gray-400 hover:text-white transition-colors"
@@ -276,7 +276,7 @@ export default function PomodoroTimer() {
             )}
 
             {/* Card */}
-            <div className="w-full max-w-md rounded-3xl bg-[#161822] border border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 flex flex-col items-center gap-8 relative overflow-hidden group">
+            <div className="w-full max-w-md rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 flex flex-col items-center gap-8 relative overflow-hidden group" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                 
                 {/* Settings icon */}
                 <button 
@@ -297,22 +297,25 @@ export default function PomodoroTimer() {
 
                 {/* Title */}
                 <div className="text-center mt-2 relative z-10">
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Focus Timer</h1>
-                    <p className="text-gray-500 text-sm mt-1">Stay in the zone, one session at a time.</p>
+                    <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--heading-text)' }}>Focus Timer</h1>
+                    <p className="text-sm mt-1" style={{ color: 'var(--muted-text)' }}>Stay in the zone, one session at a time.</p>
                 </div>
 
                 {/* Mode selector */}
-                <div className="flex gap-2 bg-white/5 border border-white/10 rounded-xl p-1.5 w-full relative z-10 shadow-inner">
+                <div className="flex gap-2 border rounded-xl p-1.5 w-full relative z-10 shadow-inner" style={{ background: 'var(--hover-overlay)', borderColor: 'var(--card-border-hover)' }}>
                     {(Object.keys(modes) as Mode[]).map(m => (
                         <button
                             key={m}
                             onClick={() => switchMode(m)}
                             className={`flex-1 text-xs font-semibold py-2.5 px-2 rounded-lg transition-all duration-300
                                 ${mode === m
-                                    ? 'bg-[#2a2c3a] text-white shadow-md border-b-[3px]'
-                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-b-[3px] border-transparent'
+                                    ? 'text-white shadow-md border-b-[3px]'
+                                    : 'hover:bg-white/5 border-b-[3px] border-transparent'
                                 }`}
-                            style={{ borderBottomColor: mode === m ? modes[m].color : 'transparent' }}
+                            style={{
+                                borderBottomColor: mode === m ? modes[m].color : 'transparent',
+                                ...(mode === m ? { background: 'var(--sidebar-toggle-bg)', color: 'var(--heading-text)' } : { color: 'var(--muted-text)' }),
+                            }}
                         >
                             {modes[m].label}
                         </button>

@@ -194,7 +194,8 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         />
                         <button
                             onClick={() => setShowImagePreview(false)}
-                            className="absolute -top-3 -right-3 w-8 h-8 bg-[#1e2030] border border-white/10 rounded-full shadow-lg flex items-center justify-center text-gray-400 hover:text-white transition"
+                            className="absolute -top-3 -right-3 w-8 h-8 rounded-full shadow-lg flex items-center justify-center transition"
+                            style={{ background: 'var(--sidebar-toggle-bg)', border: '1px solid var(--card-border-hover)', color: 'var(--muted-text)' }}
                         >
                             ✕
                         </button>
@@ -209,8 +210,9 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         className={`w-24 h-24 rounded-full overflow-hidden border-2 transition ${
                             avatarUrl
                                 ? 'border-violet-500/40 cursor-pointer hover:border-violet-400 hover:opacity-90'
-                                : 'border-white/10 bg-[#1e2030]'
-                        }`}
+                                : 'border-white/10'
+                        } `}
+                        style={!avatarUrl ? { background: 'var(--sidebar-toggle-bg)' } : undefined}
                         onClick={() => { if (avatarUrl) setShowImagePreview(true) }}
                         title={avatarUrl ? 'Click to view full image' : ''}
                     >
@@ -235,7 +237,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         </button>
 
                         {showAvatarMenu && (
-                            <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-[#1e2030] border border-white/10 rounded-xl shadow-xl py-1 z-10 w-52">
+                            <div className="absolute top-8 left-1/2 -translate-x-1/2 rounded-xl shadow-xl py-1 z-10 w-52" style={{ background: 'var(--dropdown-bg)', border: '1px solid var(--dropdown-border)' }}>
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -271,38 +273,41 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
 
                 {/* Email (read-only) */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Email</label>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Email</label>
                     <input
                         type="email"
                         value={email}
                         disabled
-                        className="w-full border border-white/5 rounded-xl px-4 py-2.5 text-gray-500 bg-white/[0.03] cursor-not-allowed text-sm"
+                        className="w-full rounded-xl px-4 py-2.5 cursor-not-allowed text-sm"
+                        style={{ background: 'var(--hover-overlay)', border: '1px solid var(--card-border)', color: 'var(--muted-text)' }}
                     />
-                    <p className="text-xs text-gray-600 mt-1">Email cannot be changed here.</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--muted-text)' }}>Email cannot be changed here.</p>
                 </div>
 
                 {/* Full Name */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Full Name</label>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Full Name</label>
                     <input
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-gray-200 bg-white/5 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm placeholder:text-gray-600 transition"
+                        className="w-full rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition"
+                        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
                         placeholder="Enter your full name"
                     />
                 </div>
 
                 {/* Timezone */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Timezone</label>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Timezone</label>
                     <select
                         value={timezone}
                         onChange={(e) => setTimezone(e.target.value)}
-                        className="w-full border border-white/10 rounded-xl px-4 py-2.5 text-gray-200 bg-[#1a1c28] focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition"
+                        className="w-full rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition"
+                        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
                     >
                         {TIMEZONES.map((tz) => (
-                            <option key={tz} value={tz} className="bg-[#1a1c28]">
+                            <option key={tz} value={tz} style={{ background: 'var(--card-bg-alt)' }}>
                                 {tz.replace(/_/g, ' ')}
                             </option>
                         ))}

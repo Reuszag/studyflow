@@ -144,10 +144,10 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-[#161822] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+        <div className="flex-1 flex flex-col min-h-0 rounded-2xl overflow-hidden shadow-xl" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
             {/* Header / Upload */}
-            <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 bg-[#1a1c28]">
-                <div className="text-sm font-medium text-gray-400">
+            <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0" style={{ background: 'var(--card-bg-alt)', borderBottom: '1px solid var(--card-border)' }}>
+                <div className="text-sm font-medium" style={{ color: 'var(--muted-text)' }}>
                     {documents.length} files stored
                 </div>
                 
@@ -174,15 +174,16 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
                 {documents.length === 0 ? (
                     <div className="text-center py-20 bg-white/[0.02] border border-white/[0.02] rounded-2xl border-dashed">
                         <div className="text-4xl mb-4">🗂️</div>
-                        <h3 className="text-lg font-medium text-gray-300">No files yet</h3>
-                        <p className="text-sm text-gray-500 mt-1">Upload your first document to get started</p>
+                        <h3 className="text-lg font-medium" style={{ color: 'var(--body-text)' }}>No files yet</h3>
+                        <p className="text-sm mt-1" style={{ color: 'var(--muted-text)' }}>Upload your first document to get started</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {documents.map(doc => (
                             <div 
                                 key={doc.id} 
-                                className="group bg-[#1a1c28] border border-white/5 rounded-xl p-4 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-900/10 transition-all duration-200"
+                                className="group rounded-xl p-4 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-900/10 transition-all duration-200"
+                            style={{ background: 'var(--card-bg-alt)', border: '1px solid var(--card-border)' }}
                             >
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="w-10 h-10 rounded-lg bg-black/20 flex items-center justify-center text-xl shrink-0">
@@ -205,7 +206,7 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
                                         </button>
                                     </div>
                                 </div>
-                                <h4 className="font-medium text-gray-200 truncate mb-1" title={doc.file_name}>
+                                <h4 className="font-medium truncate mb-1" style={{ color: 'var(--body-text)' }} title={doc.file_name}>
                                     {doc.file_name}
                                 </h4>
                                 <div className="flex items-center gap-3 text-xs text-gray-500">

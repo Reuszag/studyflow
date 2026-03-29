@@ -23,7 +23,14 @@ export default function LiveClock({ timezone }: { timezone: string }) {
     }, [timezone])
 
     return (
-        <span className="text-xs text-gray-500 bg-white/5 px-2.5 py-1 rounded-full font-mono border border-white/5">
+        <span
+            className="text-xs px-2.5 py-1 rounded-full font-mono"
+            style={{
+                color: 'var(--muted-text)',
+                background: 'var(--hover-overlay)',
+                border: '1px solid var(--card-border)',
+            }}
+        >
             🕐 {time}
         </span>
     )
