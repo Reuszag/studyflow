@@ -210,9 +210,9 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         className={`w-24 h-24 rounded-full overflow-hidden border-2 transition ${
                             avatarUrl
                                 ? 'border-violet-500/40 cursor-pointer hover:border-violet-400 hover:opacity-90'
-                                : 'border-white/10'
+                                : ''
                         } `}
-                        style={!avatarUrl ? { background: 'var(--sidebar-toggle-bg)' } : undefined}
+                        style={!avatarUrl ? { background: 'var(--sidebar-toggle-bg)', borderColor: 'var(--card-border-hover)' } : undefined}
                         onClick={() => { if (avatarUrl) setShowImagePreview(true) }}
                         title={avatarUrl ? 'Click to view full image' : ''}
                     >
@@ -244,7 +244,8 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                                         setShowAvatarMenu(false)
                                         fileInputRef.current?.click()
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition"
+                                    className="w-full text-left px-4 py-2 text-sm transition"
+                                    style={{ color: 'var(--text-secondary)' }}
                                 >
                                     📷 Upload New Picture
                                 </button>
@@ -268,7 +269,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         onChange={handleAvatarUpload}
                         className="hidden"
                     />
-                    <p className="text-xs text-gray-600">JPEG, PNG, WebP, or GIF. Max 2MB.</p>
+                    <p className="text-xs" style={{ color: 'var(--text-quaternary)' }}>JPEG, PNG, WebP, or GIF. Max 2MB.</p>
                 </div>
 
                 {/* Email (read-only) */}
@@ -338,7 +339,8 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     <button
                         type="button"
                         onClick={handleCancel}
-                        className="flex-1 bg-white/5 text-gray-400 py-2.5 rounded-xl font-semibold text-sm border border-white/10 hover:bg-white/10 hover:text-gray-200 transition-all duration-200"
+                        className="flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200"
+                        style={{ background: 'var(--overlay-soft)', color: 'var(--text-tertiary)', border: '1px solid var(--pill-border)' }}
                     >
                         Cancel
                     </button>

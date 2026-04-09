@@ -1,0 +1,196 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createNote, deleteNote, leaveSharedNote } from './actions'
+
+interface NoteItem {
+    id: string
+    title: string
+    updated_at: string
+    created_at: string
+    owner_id: string
+    shared?: boolean
+    permission?: string
+    profiles?: { full_name: string | null } | null
+}
+
+export default function NoteList({ ownedNotes, sharedNotes }: { ownedNotes: NoteItem[]; sharedNotes: NoteItem[] }) {
+    const router = useRouter()
+    const [creating, setCreating] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    async function handleCreate() {
+        setCreating(true)
+        setError(null)
+        try {
+            const result = await createNote()
+            if (result.error) {
+                setError(result.error)
+                setCreating(false)
+                return
+            }
+            if (result.id) {
+                router.push(`/dashboard/notes/${result.id}`)
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to create note')
+        }
+        setCreating(false)
+    }
+
+    async function handleDelete(id: string, e: React.MouseEvent) {
+        e.stopPropagation()
+        if (!confirm('Delete this note? This cannot be undone.')) return
+        await deleteNote(id)
+        router.refresh()
+    }
+
+    async function handleLeave(id: string, e: React.MouseEvent) {
+        e.stopPropagation()
+        if (!confirm('Remove this shared note from your list?')) return
+        await leaveSharedNote(id)
+        router.refresh()
+    }
+
+    function formatDate(dateStr: string) {
+        const d = new Date(dateStr)
+        const now = new Date()
+        const diff = now.getTime() - d.getTime()
+        const mins = Math.floor(diff / 60000)
+        if (mins < 1) return 'Just now'
+        if (mins < 60) return `${mins}m ago`
+        const hours = Math.floor(mins / 60)
+        if (hours < 24) return `${hours}h ago`
+        const days = Math.floor(hours / 24)
+        if (days < 7) return `${days}d ago`
+        return d.toLocaleDateString()
+    }
+
+    function NoteCard({ note, isOwned }: { note: NoteItem; isOwned: boolean }) {
+        return (
+            <div
+                onClick={() => router.push(`/dashboard/notes/${note.id}`)}
+                className="group relative rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-violet-900/10"
+                style={{
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--card-border)',
+                }}
+            >
+                {/* Shared badge + leave button */}
+                {!isOwned && (
+                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border" style={{ background: 'var(--active-nav-bg)', color: 'var(--active-nav-text)', borderColor: 'var(--active-nav-border)' }}>
+                            Shared {note.permission === 'view' ? '(view)' : ''}
+                        </span>
+                        <button
+                            onClick={(e) => handleLeave(note.id, e)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 hover:text-white"
+                            style={{ color: 'var(--muted-text)', background: 'var(--overlay-soft)' }}
+                            title="Leave shared note"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
+
+                {/* Delete button — owner only */}
+                {isOwned && (
+                    <button
+                        onClick={(e) => handleDelete(note.id, e)}
+                        className="absolute top-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 hover:text-white"
+                        style={{ color: 'var(--muted-text)', background: 'var(--overlay-soft)' }}
+                        title="Delete note"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                        </svg>
+                    </button>
+                )}
+
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-4 bg-violet-500/10 border border-violet-500/20">
+                    {isOwned ? '📝' : '📄'}
+                </div>
+
+                <h3 className="font-semibold truncate mb-1" style={{ color: 'var(--heading-text)' }}>
+                    {note.title || 'Untitled'}
+                </h3>
+
+                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--muted-text)' }}>
+                    <span>{formatDate(note.updated_at)}</span>
+                    {note.profiles?.full_name && (
+                        <>
+                            <span className="w-1 h-1 rounded-full" style={{ background: 'var(--muted-text)' }} />
+                            <span>{note.profiles.full_name}</span>
+                        </>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-8">
+            {/* Create button */}
+            <button
+                onClick={handleCreate}
+                disabled={creating}
+                className="w-full rounded-2xl p-5 border-2 border-dashed transition-all duration-200 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-900/10 disabled:opacity-50 cursor-pointer"
+                style={{
+                    borderColor: 'var(--card-border)',
+                    color: 'var(--muted-text)',
+                }}
+            >
+                <div className="flex items-center justify-center gap-3">
+                    <span className="text-2xl">+</span>
+                    <span className="font-medium">{creating ? 'Creating...' : 'New Note'}</span>
+                </div>
+            </button>
+
+            {error && (
+                <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                    {error}
+                </p>
+            )}
+
+            {/* Owned notes */}
+            {ownedNotes.length > 0 && (
+                <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--muted-text)' }}>
+                        My Notes ({ownedNotes.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {ownedNotes.map((note) => (
+                            <NoteCard key={note.id} note={note} isOwned />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Shared notes */}
+            {sharedNotes.length > 0 && (
+                <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--muted-text)' }}>
+                        Shared with me ({sharedNotes.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {sharedNotes.map((note) => (
+                            <NoteCard key={note.id} note={note} isOwned={false} />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Empty state */}
+            {ownedNotes.length === 0 && sharedNotes.length === 0 && (
+                <div className="text-center py-20 rounded-2xl border border-dashed" style={{ borderColor: 'var(--card-border)' }}>
+                    <div className="text-4xl mb-4">📝</div>
+                    <h3 className="text-lg font-medium" style={{ color: 'var(--body-text)' }}>No notes yet</h3>
+                    <p className="text-sm mt-1" style={{ color: 'var(--muted-text)' }}>Create your first note to get started</p>
+                </div>
+            )}
+        </div>
+    )
+}

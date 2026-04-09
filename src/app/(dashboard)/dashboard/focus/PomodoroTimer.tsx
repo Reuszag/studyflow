@@ -1,16 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-
-type Mode = 'pomodoro' | 'short' | 'long'
-
-const DEFAULT_MODES: Record<Mode, { label: string; duration: number; color: string; ring: string }> = {
-    pomodoro: { label: 'Focus', duration: 25 * 60, color: '#a78bfa', ring: '#7c3aed' },
-    short:    { label: 'Short Break', duration: 5 * 60, color: '#34d399', ring: '#059669' },
-    long:     { label: 'Long Break', duration: 15 * 60, color: '#60a5fa', ring: '#2563eb' },
-}
-
-const POMODOROS_BEFORE_LONG = 4
+import { useState } from 'react'
+import { useTimer, type Mode } from '@/lib/TimerContext'
 
 function pad(n: number) {
     return String(n).padStart(2, '0')
@@ -22,183 +13,34 @@ function formatTime(seconds: number) {
     return `${pad(m)}:${pad(s)}`
 }
 
-function playBeep() {
-    try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.type = 'sine'
-        osc.frequency.setValueAtTime(880, ctx.currentTime)
-        gain.gain.setValueAtTime(0.4, ctx.currentTime)
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8)
-        osc.start(ctx.currentTime)
-        osc.stop(ctx.currentTime + 0.8)
-
-        // Second beep
-        const osc2 = ctx.createOscillator()
-        const gain2 = ctx.createGain()
-        osc2.connect(gain2)
-        gain2.connect(ctx.destination)
-        osc2.type = 'sine'
-        osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.9)
-        gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.9)
-        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.6)
-        osc2.start(ctx.currentTime + 0.9)
-        osc2.stop(ctx.currentTime + 1.6)
-    } catch {
-        // Audio not available
-    }
-}
+const POMODOROS_BEFORE_LONG = 4
 
 // SVG ring dimensions
 const R = 90
 const CIRC = 2 * Math.PI * R
 
 export default function PomodoroTimer() {
-    const [modes, setModes] = useState(DEFAULT_MODES)
-    const [mode, setMode] = useState<Mode>('pomodoro')
-    const [timeLeft, setTimeLeft] = useState(DEFAULT_MODES.pomodoro.duration)
-    const [running, setRunning] = useState(false)
-    const [pomodoroCount, setPomodoroCount] = useState(0)
-    const [sessionLabel, setSessionLabel] = useState<string | null>(null)
+    const {
+        modes, mode, timeLeft, running, pomodoroCount, sessionLabel,
+        cfg, progress,
+        setRunning, switchMode, handleReset, saveModeSettings,
+    } = useTimer()
+
     const [showSettings, setShowSettings] = useState(false)
     const [tempSettings, setTempSettings] = useState({
-        pomodoro: 25,
-        short: 5,
-        long: 15
+        pomodoro: modes.pomodoro.duration / 60,
+        short: modes.short.duration / 60,
+        long: modes.long.duration / 60,
     })
-    
-    // To avoid hydration mismatch, check if mounted
-    const [mounted, setMounted] = useState(false)
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-    const cfg = modes[mode]
-    const progress = timeLeft / cfg.duration
     const strokeDashoffset = CIRC * (1 - progress)
 
-    useEffect(() => {
-        setMounted(true)
-        const saved = localStorage.getItem('studyflow_timer_settings')
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved)
-                // Need to validate it matches our shape just in case
-                if (parsed.pomodoro && parsed.short && parsed.long) {
-                    setModes(parsed)
-                    setTimeLeft(parsed.pomodoro.duration)
-                    setTempSettings({
-                        pomodoro: parsed.pomodoro.duration / 60,
-                        short: parsed.short.duration / 60,
-                        long: parsed.long.duration / 60
-                    })
-                }
-            } catch (e) {
-                // Ignore parse errors
-            }
-        }
-    }, [])
-
-    // Update document title while running
-    useEffect(() => {
-        if (!mounted) return
-        
-        if (running) {
-            document.title = `${formatTime(timeLeft)} – ${cfg.label} | StudyFlow`
-        } else {
-            document.title = 'StudyFlow'
-        }
-        return () => { document.title = 'StudyFlow' }
-    }, [running, timeLeft, cfg.label, mounted])
-
-    const advanceMode = useCallback((completedMode: Mode, currentCount: number) => {
-        playBeep()
-        if (completedMode === 'pomodoro') {
-            const newCount = currentCount + 1
-            setPomodoroCount(newCount)
-            if (newCount % POMODOROS_BEFORE_LONG === 0) {
-                setMode('long')
-                setTimeLeft(modes.long.duration)
-                setSessionLabel(`🎉 ${newCount} Pomodoros done! Long break time.`)
-            } else {
-                setMode('short')
-                setTimeLeft(modes.short.duration)
-                setSessionLabel(`✅ Pomodoro #${newCount} done! Short break.`)
-            }
-        } else {
-            setMode('pomodoro')
-            setTimeLeft(modes.pomodoro.duration)
-            setSessionLabel(`🍅 Break over. Back to focus!`)
-        }
-        setRunning(false)
-    }, [modes])
-
-    useEffect(() => {
-        if (running) {
-            intervalRef.current = setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        clearInterval(intervalRef.current!)
-                        setRunning(false)
-                        // Use a timeout so state is flushed before mode advance
-                        setTimeout(() => {
-                            setMode(m => {
-                                setPomodoroCount(c => {
-                                    advanceMode(m, c)
-                                    return c
-                                })
-                                return m
-                            })
-                        }, 50)
-                        return 0
-                    }
-                    return prev - 1
-                })
-            }, 1000)
-        } else {
-            if (intervalRef.current) clearInterval(intervalRef.current)
-        }
-        return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-    }, [running, advanceMode])
-
-    function switchMode(m: Mode) {
-        setRunning(false)
-        setMode(m)
-        setTimeLeft(modes[m].duration)
-        setSessionLabel(null)
-    }
-
-    function handleReset() {
-        setRunning(false)
-        setTimeLeft(cfg.duration)
-        setSessionLabel(null)
-    }
-
     function saveSettings() {
-        // Validate inputs
-        const p = Math.max(1, Math.min(120, tempSettings.pomodoro))
-        const s = Math.max(1, Math.min(60, tempSettings.short))
-        const l = Math.max(1, Math.min(120, tempSettings.long))
-        
-        const newModes = { ...modes }
-        newModes.pomodoro.duration = p * 60
-        newModes.short.duration = s * 60
-        newModes.long.duration = l * 60
-        
-        setModes(newModes)
-        localStorage.setItem('studyflow_timer_settings', JSON.stringify(newModes))
-        
-        // Reset current active timer to its new default
-        setRunning(false)
-        setTimeLeft(newModes[mode].duration)
-        setSessionLabel(null)
+        saveModeSettings(tempSettings.pomodoro, tempSettings.short, tempSettings.long)
         setShowSettings(false)
     }
 
     const dots = Array.from({ length: POMODOROS_BEFORE_LONG }, (_, i) => i)
-
-    if (!mounted) return null // Prevent hydration mismatch
 
     return (
         <div className="flex flex-col items-center justify-center min-h-full py-16 px-6 relative">
@@ -208,63 +50,68 @@ export default function PomodoroTimer() {
                     <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl" style={{ background: 'var(--card-bg)', border: '1px solid var(--dropdown-border)' }}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold" style={{ color: 'var(--heading-text)' }}>Timer Settings</h2>
-                            <button 
+                            <button
                                 onClick={() => setShowSettings(false)}
-                                className="text-gray-400 hover:text-white transition-colors"
+                                className="transition-colors"
+                                style={{ color: 'var(--text-tertiary)' }}
                             >
                                 ✕
                             </button>
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div>
-                                <label className="block flex justify-between text-sm font-medium text-gray-300 mb-1">
+                                <label className="block flex justify-between text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                                     <span>Focus Duration</span>
                                     <span className="text-violet-400">{tempSettings.pomodoro} min</span>
                                 </label>
-                                <input 
-                                    type="range" min="1" max="120" 
-                                    value={tempSettings.pomodoro} 
-                                    onChange={(e) => setTempSettings({...tempSettings, pomodoro: Number(e.target.value)})}
-                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-violet-500" 
+                                <input
+                                    type="range" min="1" max="120"
+                                    value={tempSettings.pomodoro}
+                                    onChange={(e) => setTempSettings({ ...tempSettings, pomodoro: Number(e.target.value) })}
+                                    className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-violet-500"
+                                    style={{ background: 'var(--overlay-strong)' }}
                                 />
                             </div>
-                            
+
                             <div>
-                                <label className="block flex justify-between text-sm font-medium text-gray-300 mb-1">
+                                <label className="block flex justify-between text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                                     <span>Short Break</span>
                                     <span className="text-emerald-400">{tempSettings.short} min</span>
                                 </label>
-                                <input 
-                                    type="range" min="1" max="60" 
-                                    value={tempSettings.short} 
-                                    onChange={(e) => setTempSettings({...tempSettings, short: Number(e.target.value)})}
-                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500" 
+                                <input
+                                    type="range" min="1" max="60"
+                                    value={tempSettings.short}
+                                    onChange={(e) => setTempSettings({ ...tempSettings, short: Number(e.target.value) })}
+                                    className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                    style={{ background: 'var(--overlay-strong)' }}
                                 />
                             </div>
-                            
+
                             <div>
-                                <label className="block flex justify-between text-sm font-medium text-gray-300 mb-1">
+                                <label className="block flex justify-between text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                                     <span>Long Break</span>
                                     <span className="text-blue-400">{tempSettings.long} min</span>
                                 </label>
-                                <input 
-                                    type="range" min="1" max="120" 
-                                    value={tempSettings.long} 
-                                    onChange={(e) => setTempSettings({...tempSettings, long: Number(e.target.value)})}
-                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500" 
+                                <input
+                                    type="range" min="1" max="120"
+                                    value={tempSettings.long}
+                                    onChange={(e) => setTempSettings({ ...tempSettings, long: Number(e.target.value) })}
+                                    className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                    style={{ background: 'var(--overlay-strong)' }}
                                 />
                             </div>
                         </div>
-                        
+
                         <div className="flex gap-3 mt-8">
-                            <button 
+                            <button
                                 onClick={() => setShowSettings(false)}
-                                className="flex-1 py-2.5 rounded-xl font-medium text-sm text-gray-400 border border-white/5 bg-white/5 hover:bg-white/10 hover:text-gray-200 transition-colors"
+                                className="flex-1 py-2.5 rounded-xl font-medium text-sm transition-colors"
+                                style={{ color: 'var(--text-tertiary)', border: '1px solid var(--pill-border)', background: 'var(--overlay-soft)' }}
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 onClick={saveSettings}
                                 className="flex-[2] py-2.5 rounded-xl font-medium text-sm text-white bg-violet-600 hover:bg-violet-500 transition-colors shadow-lg shadow-violet-900/50"
                             >
@@ -276,12 +123,11 @@ export default function PomodoroTimer() {
             )}
 
             {/* Card */}
-            <div className="w-full max-w-md rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 flex flex-col items-center gap-8 relative overflow-hidden group" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
-                
+            <div className="w-full max-w-md rounded-3xl p-8 flex flex-col items-center gap-8 relative overflow-hidden group" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: '0 0 50px var(--shadow-color)' }}>
+
                 {/* Settings icon */}
-                <button 
+                <button
                     onClick={() => {
-                        // Initialize temp settings with current modes
                         setTempSettings({
                             pomodoro: modes.pomodoro.duration / 60,
                             short: modes.short.duration / 60,
@@ -289,7 +135,8 @@ export default function PomodoroTimer() {
                         })
                         setShowSettings(true)
                     }}
-                    className="absolute top-6 right-6 w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 z-10 opacity-70 hover:opacity-100"
+                    className="absolute top-6 right-6 w-9 h-9 rounded-full flex items-center justify-center transition-all border border-transparent z-10 opacity-70 hover:opacity-100"
+                    style={{ background: 'var(--overlay-soft)', color: 'var(--text-tertiary)' }}
                     title="Timer Settings"
                 >
                     ⚙️
@@ -309,8 +156,8 @@ export default function PomodoroTimer() {
                             onClick={() => switchMode(m)}
                             className={`flex-1 text-xs font-semibold py-2.5 px-2 rounded-lg transition-all duration-300
                                 ${mode === m
-                                    ? 'text-white shadow-md border-b-[3px]'
-                                    : 'hover:bg-white/5 border-b-[3px] border-transparent'
+                                    ? 'shadow-md border-b-[3px]'
+                                    : 'border-b-[3px] border-transparent'
                                 }`}
                             style={{
                                 borderBottomColor: mode === m ? modes[m].color : 'transparent',
@@ -325,14 +172,12 @@ export default function PomodoroTimer() {
                 {/* Circular timer */}
                 <div className="relative flex items-center justify-center my-4" style={{ width: 220, height: 220 }}>
                     <svg width="220" height="220" className="absolute inset-0 -rotate-90">
-                        {/* Track */}
                         <circle
                             cx="110" cy="110" r={R}
                             fill="none"
-                            stroke="rgba(255,255,255,0.03)"
+                            stroke="var(--ring-track)"
                             strokeWidth="12"
                         />
-                        {/* Progress */}
                         <circle
                             cx="110" cy="110" r={R}
                             fill="none"
@@ -343,7 +188,6 @@ export default function PomodoroTimer() {
                             strokeDashoffset={strokeDashoffset}
                             style={{ transition: 'stroke-dashoffset 0.8s ease' }}
                         />
-                        {/* Glow */}
                         <circle
                             cx="110" cy="110" r={R}
                             fill="none"
@@ -367,7 +211,6 @@ export default function PomodoroTimer() {
                         </defs>
                     </svg>
 
-                    {/* Center time display */}
                     <div className="flex flex-col items-center z-10">
                         <span
                             className="font-mono font-bold text-[3.5rem] leading-none tracking-tighter"
@@ -375,35 +218,32 @@ export default function PomodoroTimer() {
                         >
                             {formatTime(timeLeft)}
                         </span>
-                        <span className="text-gray-500 text-[10px] mt-2 font-bold uppercase tracking-[0.2em]">
+                        <span className="text-[10px] mt-2 font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--text-quaternary)' }}>
                             {cfg.label}
                         </span>
                     </div>
                 </div>
 
                 {/* Pomodoro dots */}
-                <div className="flex items-center gap-2 relative z-10 bg-black/20 px-4 py-2 rounded-full border border-white/5">
-                    {dots.map(i => {
-                        const filled = i < (pomodoroCount % POMODOROS_BEFORE_LONG) || (pomodoroCount > 0 && pomodoroCount % POMODOROS_BEFORE_LONG === 0)
-                        return (
-                            <div
-                                key={i}
-                                className={`w-3 h-3 rounded-full transition-all duration-300 shadow-inner ${
-                                    i < (pomodoroCount % POMODOROS_BEFORE_LONG)
-                                        ? 'bg-violet-500 scale-110 shadow-[0_0_8px_rgba(139,92,246,0.6)]'
-                                        : 'bg-white/10'
+                <div className="flex items-center gap-2 relative z-10 px-4 py-2 rounded-full" style={{ background: 'var(--overlay-soft)', border: '1px solid var(--pill-border)' }}>
+                    {dots.map(i => (
+                        <div
+                            key={i}
+                            className={`w-3 h-3 rounded-full transition-all duration-300 shadow-inner ${i < (pomodoroCount % POMODOROS_BEFORE_LONG)
+                                    ? 'bg-violet-500 scale-110 shadow-[0_0_8px_rgba(139,92,246,0.6)]'
+                                    : ''
                                 }`}
-                            />
-                        )
-                    })}
-                    <span className="ml-2 text-xs text-gray-400 font-medium">
+                            style={i >= (pomodoroCount % POMODOROS_BEFORE_LONG) ? { background: 'var(--overlay-medium)', border: '1.5px solid var(--overlay-strong)' } : undefined}
+                        />
+                    ))}
+                    <span className="ml-2 text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
                         {pomodoroCount} session{pomodoroCount !== 1 ? 's' : ''} done
                     </span>
                 </div>
 
                 {/* Session notification */}
                 {sessionLabel && (
-                    <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-gray-200 text-center w-full shadow-lg relative z-10">
+                    <div className="rounded-xl px-4 py-3 text-sm font-medium text-center w-full shadow-lg relative z-10" style={{ background: 'var(--overlay-soft)', border: '1px solid var(--pill-border)', color: 'var(--text-secondary)' }}>
                         {sessionLabel}
                     </div>
                 )}
@@ -412,16 +252,17 @@ export default function PomodoroTimer() {
                 <div className="flex items-center gap-4 w-full relative z-10 mt-2">
                     <button
                         onClick={handleReset}
-                        className="flex-1 py-3.5 rounded-xl text-sm font-semibold text-gray-400 bg-white/5 hover:bg-white/10 hover:text-gray-200 transition-all duration-200 border border-white/5 hover:border-white/10 active:scale-95"
+                        className="flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95"
+                        style={{ color: 'var(--text-tertiary)', background: 'var(--overlay-soft)', border: '1px solid var(--pill-border)' }}
                     >
                         Reset
                     </button>
                     <button
-                        onClick={() => setRunning(r => !r)}
+                        onClick={() => setRunning((r: boolean) => !r)}
                         className="flex-[2] py-3.5 rounded-xl text-base font-bold transition-all duration-200 shadow-xl active:scale-95 flex items-center justify-center gap-2"
                         style={{
                             background: running
-                                ? 'rgba(255,255,255,0.08)'
+                                ? 'var(--overlay-medium)'
                                 : `linear-gradient(135deg, ${cfg.color}e6, ${cfg.ring})`,
                             color: running ? cfg.color : 'white',
                             border: running ? `1px solid ${cfg.color}33` : '1px solid transparent',
@@ -433,7 +274,7 @@ export default function PomodoroTimer() {
             </div>
 
             {/* Tips */}
-            <p className="mt-8 text-center text-xs text-gray-600 max-w-sm">
+            <p className="mt-8 text-center text-xs max-w-sm" style={{ color: 'var(--text-quaternary)' }}>
                 💡 Work for your set focus time, take a short break. Every 4 sessions, you deserve a long break. ⚙️ Click the gear to customize your times.
             </p>
         </div>

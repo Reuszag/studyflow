@@ -37,6 +37,11 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
     }, [initialTasks])
 
     const handleAddTask = async (formData: FormData) => {
+        const title = (formData.get('title') as string)?.trim()
+        if (title && tasks.some(t => t.title.toLowerCase() === title.toLowerCase())) {
+            showToast('A task with this name already exists!', 'error')
+            return
+        }
         setIsAdding(true)
         const result = await addTask(formData)
         if (result.error) {
@@ -147,17 +152,18 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                 <form
                     ref={formRef}
                     action={handleAddTask}
-                    className="flex flex-col sm:flex-row gap-3 bg-black/20 p-2 rounded-2xl border border-white/5 focus-within:border-violet-500/30 focus-within:bg-black/40 transition-all"
+                    className="flex flex-col sm:flex-row gap-3 p-2 rounded-2xl transition-all focus-within:border-violet-500/30"
+                    style={{ background: 'var(--overlay-soft)', border: '1px solid var(--pill-border)' }}
                 >
                     <input
                         type="text"
                         name="title"
                         placeholder="What needs to be done?"
                         required
-                        className="flex-1 bg-transparent border-none outline-none px-4 py-2 placeholder:text-gray-500 font-medium"
+                        className="flex-1 bg-transparent border-none outline-none px-4 py-2 font-medium"
                         style={{ color: 'var(--foreground)' }}
                     />
-                    <div className="flex items-center gap-3 px-2 pb-3 sm:pb-0 shrink-0 border-t border-white/5 sm:border-none pt-3 sm:pt-0 mt-2 sm:mt-0 relative z-10 w-full sm:w-auto">
+                    <div className="flex items-center gap-3 px-2 pb-3 sm:pb-0 shrink-0 pt-3 sm:pt-0 mt-2 sm:mt-0 relative z-10 w-full sm:w-auto">
 
                         {/* Custom React Calendar Date Picker */}
                         <div className="relative flex-1 sm:min-w-[140px]">
@@ -184,7 +190,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                             <button
                                                 type="button"
                                                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
+                                                style={{ color: 'var(--text-tertiary)' }}
                                             >
                                                 ◀
                                             </button>
@@ -194,7 +201,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                             <button
                                                 type="button"
                                                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
+                                                style={{ color: 'var(--text-tertiary)' }}
                                             >
                                                 ▶
                                             </button>
@@ -203,7 +211,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                         {/* Calendar Grid Header */}
                                         <div className="grid grid-cols-7 gap-1 mb-1">
                                             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                                                <div key={day} className="text-[10px] font-bold text-gray-500 text-center py-1">
+                                                <div key={day} className="text-[10px] font-bold text-center py-1" style={{ color: 'var(--text-quaternary)' }}>
                                                     {day}
                                                 </div>
                                             ))}
@@ -235,11 +243,12 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                                             setPlannedDate(`${year}-${month}-${day}`)
                                                             setIsCalendarOpen(false)
                                                         }}
-                                                        className={`w-7 h-7 flex items-center justify-center text-xs rounded-full transition-all mx-auto ${isPast ? 'text-gray-600 cursor-not-allowed opacity-40' :
+                                                        className={`w-7 h-7 flex items-center justify-center text-xs rounded-full transition-all mx-auto ${isPast ? 'cursor-not-allowed opacity-40' :
                                                             isSelected ? 'bg-blue-500 text-white font-bold shadow-md shadow-blue-500/30' :
-                                                                isTodayLocal ? 'text-blue-400 font-bold border border-blue-500/30 hover:bg-white/5' :
-                                                                    'text-gray-300 hover:bg-white/10 hover:text-white'
+                                                                isTodayLocal ? 'text-blue-400 font-bold border border-blue-500/30' :
+                                                                    ''
                                                             }`}
+                                                        style={!isPast && !isSelected && !isTodayLocal ? { color: 'var(--text-secondary)' } : isPast ? { color: 'var(--text-quaternary)' } : undefined}
                                                     >
                                                         {date}
                                                     </button>
@@ -283,7 +292,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                                 key={opt.id}
                                                 type="button"
                                                 onClick={() => { setFormPriority(opt.id); setIsPriorityOpen(false) }}
-                                                className={`w-full flex items-center justify-start gap-2.5 px-4 py-2 text-xs font-semibold cursor-pointer transition-colors active:bg-white/10 ${opt.color} ${formPriority === opt.id ? 'bg-white/10' : 'hover:bg-white/[0.03]'}`}
+                                                className={`w-full flex items-center justify-start gap-2.5 px-4 py-2 text-xs font-semibold cursor-pointer transition-colors ${opt.color}`}
+                                                style={{ background: formPriority === opt.id ? 'var(--overlay-medium)' : undefined }}
                                             >
                                                 <span className="opacity-80 text-[12px]">{opt.icon}</span>
                                                 {opt.label}
@@ -324,7 +334,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                     <div className={`w-2 h-2 rounded-full bg-${col.color}-500 shadow-[0_0_8px_rgba(var(--color-${col.color}-500),0.5)]`}></div>
                                     {col.title}
                                 </h3>
-                                <div className="text-xs font-bold text-gray-500 bg-white/5 px-2.5 py-1 rounded-full">
+                                <div className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ color: 'var(--text-quaternary)', background: 'var(--overlay-soft)' }}>
                                     {columnTasks.length}
                                 </div>
                             </div>
@@ -333,7 +343,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                             <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${columnTasks.length === 0 ? 'flex items-center justify-center' : ''}`}>
                                 {columnTasks.length === 0 ? (
                                     <div className="text-center py-10 opacity-40">
-                                        <div className="text-sm font-medium text-gray-400 border border-dashed border-gray-600 rounded-xl px-6 py-4">
+                                        <div className="text-sm font-medium rounded-xl px-6 py-4 border border-dashed" style={{ color: 'var(--text-tertiary)', borderColor: 'var(--dashed-border)' }}>
                                             Drop tasks here
                                         </div>
                                     </div>
@@ -345,25 +355,29 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                             onDragStart={(e) => handleDragStart(e, task.id)}
                                             onDragEnd={handleDragEnd}
                                             className={`group relative flex flex-col gap-3 p-4 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing hover:-translate-y-0.5 shadow-md ${task.status === 'completed'
-                                                ? 'bg-white/[0.02] border-white/5 opacity-70 hover:opacity-100'
-                                                : 'border-white/10 hover:border-violet-500/40 hover:shadow-violet-900/20'
+                                                ? 'opacity-70 hover:opacity-100'
+                                                : 'hover:border-violet-500/40'
                                                 }`}
-                                            style={task.status !== 'completed' ? { background: 'var(--card-bg-alt)' } : undefined}
+                                            style={{
+                                                background: task.status === 'completed' ? 'var(--overlay-soft)' : 'var(--card-bg-alt)',
+                                                borderColor: task.status === 'completed' ? 'var(--pill-border)' : 'var(--card-border-hover)',
+                                            }}
                                         >
                                             <div className="flex items-start gap-3">
                                                 <button
                                                     onClick={() => handleToggle(task.id, task.status)}
                                                     className={`w-5 h-5 mt-0.5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all ${task.status === 'completed'
                                                         ? `bg-${col.color}-500 border-${col.color}-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]`
-                                                        : 'border-gray-500 hover:border-violet-400 hover:bg-violet-500/10'
+                                                        : 'hover:border-violet-400 hover:bg-violet-500/10'
                                                         }`}
+                                                    style={task.status !== 'completed' ? { borderColor: 'var(--text-quaternary)' } : undefined}
                                                 >
                                                     {task.status === 'completed' && <span className="text-[10px] font-bold">✓</span>}
                                                 </button>
 
                                                 <div className="flex-1 min-w-0 pr-6">
-                                                    <h4 className={`text-sm font-medium leading-snug ${task.status === 'completed' ? 'text-gray-400 line-through decoration-gray-600' : 'text-gray-200'
-                                                        }`}>
+                                                    <h4 className={`text-sm font-medium leading-snug ${task.status === 'completed' ? 'line-through' : ''}`}
+                                                        style={{ color: task.status === 'completed' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
                                                         {task.title}
                                                     </h4>
                                                 </div>
@@ -371,7 +385,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                                 {/* Delete Button (Hidden until hover) */}
                                                 <button
                                                     onClick={() => handleDelete(task.id)}
-                                                    className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:bg-red-500/10 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                                    className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                                    style={{ color: 'var(--text-quaternary)' }}
                                                     title="Delete task"
                                                 >
                                                     ✕
@@ -385,7 +400,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
 
                                                 <div className="flex items-center gap-1.5">
                                                     {task.planned_date && (
-                                                        <div className="text-[10px] font-medium text-gray-300 flex items-center gap-1.5 bg-white/[0.03] px-2.5 py-1 rounded-md border border-white/[0.05] shadow-sm" title="Planned Date">
+                                                        <div className="text-[10px] font-medium flex items-center gap-1.5 px-2.5 py-1 rounded-md shadow-sm" style={{ color: 'var(--text-secondary)', background: 'var(--overlay-soft)', border: '1px solid var(--pill-border)' }} title="Planned Date">
                                                             <span className="opacity-60">📅</span> {new Date(task.planned_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </div>
                                                     )}

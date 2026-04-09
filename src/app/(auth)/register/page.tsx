@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import ReCAPTCHA from 'react-google-recaptcha'
 import ThemeToggle from '@/app/components/ThemeToggle'
+import { registerUser } from './actions'
 
 const PASSWORD_RULES = [
     { key: 'length', label: 'At least 8 characters', test: (pw: string) => pw.length >= 8 },
@@ -31,6 +32,8 @@ export default function RegisterPage() {
     const [success, setSuccess] = useState(false)
     const [loading, setLoading] = useState(false)
     const [touched, setTouched] = useState(false)
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+    const recaptchaRef = useRef<ReCAPTCHA>(null)
 
     const ruleResults = useMemo(
         () => PASSWORD_RULES.map((r) => ({ ...r, pass: r.test(password) })),
@@ -56,31 +59,33 @@ export default function RegisterPage() {
             return
         }
 
-        setLoading(true)
-
-        const supabase = createClient()
-
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-        })
-
-        if (error) {
-            setError(error.message)
-            setLoading(false)
+        if (!captchaToken) {
+            setError('Please complete the CAPTCHA verification.')
             return
         }
 
-        // If email confirmation is OFF, Supabase gives a session immediately
-        if (data.session) {
-            router.push('/dashboard')
+        setLoading(true)
+
+        const result = await registerUser(email, password, captchaToken)
+
+        if (result.error) {
+            setError(result.error)
+            setLoading(false)
+            recaptchaRef.current?.reset()
+            setCaptchaToken(null)
+            return
+        }
+
+        if (result.redirect) {
+            router.push(result.redirect)
             router.refresh()
             return
         }
 
-        // If email confirmation is ON, show "check your email" message
-        setSuccess(true)
-        setLoading(false)
+        if (result.confirmEmail) {
+            setSuccess(true)
+            setLoading(false)
+        }
     }
 
     if (success) {
@@ -127,7 +132,7 @@ export default function RegisterPage() {
             style={{ background: 'var(--background)' }}
         >
             {/* Background glow orbs */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ opacity: 'var(--glow-opacity)' }}>
                 <div
                     className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
                     style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }}
@@ -274,9 +279,18 @@ export default function RegisterPage() {
                         <p className="text-red-400 text-sm">{error}</p>
                     )}
 
+                    <div className="flex justify-center">
+                        <ReCAPTCHA
+                            ref={recaptchaRef}
+                            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                            onChange={(token) => setCaptchaToken(token)}
+                            onExpired={() => setCaptchaToken(null)}
+                        />
+                    </div>
+
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !captchaToken}
                         className="w-full text-white py-2.5 rounded-lg font-semibold disabled:opacity-50 transition-all duration-200 cursor-pointer shadow-lg shadow-violet-900/20"
                         style={{
                             background: 'linear-gradient(135deg, var(--accent), #4f46e5)',

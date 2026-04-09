@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import ReCAPTCHA from 'react-google-recaptcha'
 import { createClient } from '@/lib/supabase/client'
 import ThemeToggle from '@/app/components/ThemeToggle'
 
@@ -12,22 +13,32 @@ export default function LoginPage() {
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+    const recaptchaRef = useRef<ReCAPTCHA>(null)
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault()
-        setLoading(true)
         setError('')
+
+        if (!captchaToken) {
+            setError('Please complete the CAPTCHA verification.')
+            return
+        }
+
+        setLoading(true)
 
         const supabase = createClient()
 
         const { error } = await supabase.auth.signInWithPassword({
-            email,
+            email: email.trim(),
             password,
         })
 
         if (error) {
-            setError(error.message)
+            setError('Invalid email or password. Please try again.')
             setLoading(false)
+            recaptchaRef.current?.reset()
+            setCaptchaToken(null)
             return
         }
 
@@ -41,7 +52,7 @@ export default function LoginPage() {
             style={{ background: 'var(--background)' }}
         >
             {/* Background glow orbs */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ opacity: 'var(--glow-opacity)' }}>
                 <div
                     className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-20"
                     style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }}
@@ -124,9 +135,18 @@ export default function LoginPage() {
                         <p className="text-red-400 text-sm">{error}</p>
                     )}
 
+                    <div className="flex justify-center">
+                        <ReCAPTCHA
+                            ref={recaptchaRef}
+                            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                            onChange={(token) => setCaptchaToken(token)}
+                            onExpired={() => setCaptchaToken(null)}
+                        />
+                    </div>
+
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !captchaToken}
                         className="w-full text-white py-2.5 rounded-lg font-semibold disabled:opacity-50 transition-all duration-200 cursor-pointer shadow-lg shadow-violet-900/20"
                         style={{
                             background: 'linear-gradient(135deg, var(--accent), #4f46e5)',

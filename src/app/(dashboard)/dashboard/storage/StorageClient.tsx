@@ -172,7 +172,7 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
             {/* File List */}
             <div className="flex-1 overflow-auto p-6">
                 {documents.length === 0 ? (
-                    <div className="text-center py-20 bg-white/[0.02] border border-white/[0.02] rounded-2xl border-dashed">
+                    <div className="text-center py-20 rounded-2xl border-dashed" style={{ background: 'var(--overlay-soft)', border: '1px dashed var(--dashed-border)' }}>
                         <div className="text-4xl mb-4">🗂️</div>
                         <h3 className="text-lg font-medium" style={{ color: 'var(--body-text)' }}>No files yet</h3>
                         <p className="text-sm mt-1" style={{ color: 'var(--muted-text)' }}>Upload your first document to get started</p>
@@ -186,20 +186,22 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
                             style={{ background: 'var(--card-bg-alt)', border: '1px solid var(--card-border)' }}
                             >
                                 <div className="flex justify-between items-start mb-3">
-                                    <div className="w-10 h-10 rounded-lg bg-black/20 flex items-center justify-center text-xl shrink-0">
+                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--overlay-soft)' }}>
                                         {getFileIcon(doc.file_type)}
                                     </div>
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button 
+                                        <button
                                             onClick={() => handleDownload(doc.file_path, doc.file_name)}
-                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-gray-300 hover:bg-violet-500 hover:text-white transition-colors"
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-violet-500 hover:text-white transition-colors"
+                                            style={{ background: 'var(--overlay-soft)', color: 'var(--text-secondary)' }}
                                             title="Download"
                                         >
                                             ⬇️
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => handleDelete(doc.id, doc.file_path)}
-                                            className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-gray-300 hover:bg-red-500 hover:text-white transition-colors"
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+                                            style={{ background: 'var(--overlay-soft)', color: 'var(--text-secondary)' }}
                                             title="Delete"
                                         >
                                             🗑️
@@ -209,9 +211,9 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
                                 <h4 className="font-medium truncate mb-1" style={{ color: 'var(--body-text)' }} title={doc.file_name}>
                                     {doc.file_name}
                                 </h4>
-                                <div className="flex items-center gap-3 text-xs text-gray-500">
+                                <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-quaternary)' }}>
                                     <span>{formatSize(doc.file_size)}</span>
-                                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
+                                    <span className="w-1 h-1 rounded-full" style={{ background: 'var(--text-quaternary)' }}></span>
                                     <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                                 </div>
                             </div>

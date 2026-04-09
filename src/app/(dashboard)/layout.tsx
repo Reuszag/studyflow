@@ -4,7 +4,7 @@ import Sidebar from './dashboard/Sidebar'
 import ProfileDropdown from './dashboard/ProfileDropdown'
 import LiveClock from './dashboard/LiveClock'
 import ThemeToggle from '@/app/components/ThemeToggle'
-import Link from 'next/link'
+import DashboardClientWrapper from './dashboard/DashboardClientWrapper'
 
 export default async function DashboardLayout({
     children,
@@ -58,7 +58,9 @@ export default async function DashboardLayout({
 
                 {/* Page content */}
                 <main className="flex-1 overflow-auto">
-                    {children}
+                    <DashboardClientWrapper>
+                        {children}
+                    </DashboardClientWrapper>
                 </main>
             </div>
         </div>

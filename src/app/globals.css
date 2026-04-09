@@ -30,37 +30,73 @@
   --accent-hover: #6d28d9;
   --footer-text: #374151;
   --glow-opacity: 1;
+
+  /* ─── Dark-mode semantic tokens ─── */
+  --overlay-soft: rgba(255, 255, 255, 0.05);
+  --overlay-medium: rgba(255, 255, 255, 0.08);
+  --overlay-strong: rgba(255, 255, 255, 0.12);
+  --ring-track: rgba(255, 255, 255, 0.03);
+  --pill-bg: rgba(255, 255, 255, 0.05);
+  --pill-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(22, 24, 34, 0.85);
+  --text-primary: #ffffff;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-quaternary: #6b7280;
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --dashed-border: #374151;
+  --active-nav-bg: rgba(139, 92, 246, 0.20);
+  --active-nav-text: #c4b5fd;
+  --active-nav-border: rgba(139, 92, 246, 0.30);
 }
 
 /* ─── Light theme ─── */
 .light {
-  --background: #f4f4f7;
-  --background-deep: #eaecf0;
-  --foreground: #18181b;
-  --card-bg: #ffffff;
-  --card-bg-alt: #f9fafb;
-  --card-border: rgba(0, 0, 0, 0.08);
-  --card-border-hover: rgba(0, 0, 0, 0.15);
-  --input-bg: #f9fafb;
-  --input-border: #d1d5db;
-  --input-text: #18181b;
-  --label-text: #374151;
-  --muted-text: #6b7280;
+  --background: #c5c9d8;
+  --background-deep: #bcc0d1;
+  --foreground: #1a1a2e;
+  --card-bg: #dfe2ec;
+  --card-bg-alt: #d5d9e5;
+  --card-border: rgba(0, 0, 0, 0.15);
+  --card-border-hover: rgba(0, 0, 0, 0.25);
+  --input-bg: #ced2de;
+  --input-border: #9ca3af;
+  --input-text: #1a1a2e;
+  --label-text: #3b4252;
+  --muted-text: #5a6170;
   --heading-text: #111827;
-  --body-text: #374151;
-  --subtle-text: #6b7280;
-  --sidebar-bg: #ffffff;
-  --sidebar-hover: rgba(0, 0, 0, 0.04);
-  --sidebar-toggle-bg: #e5e7eb;
-  --header-bg: rgba(255, 255, 255, 0.85);
-  --header-border: rgba(0, 0, 0, 0.06);
-  --dropdown-bg: #ffffff;
-  --dropdown-border: rgba(0, 0, 0, 0.1);
-  --hover-overlay: rgba(0, 0, 0, 0.03);
+  --body-text: #2d3340;
+  --subtle-text: #5a6170;
+  --sidebar-bg: #d2d6e2;
+  --sidebar-hover: rgba(0, 0, 0, 0.07);
+  --sidebar-toggle-bg: #c0c4d2;
+  --header-bg: rgba(210, 214, 226, 0.92);
+  --header-border: rgba(0, 0, 0, 0.12);
+  --dropdown-bg: #d8dce8;
+  --dropdown-border: rgba(0, 0, 0, 0.18);
+  --hover-overlay: rgba(0, 0, 0, 0.05);
   --accent: #7c3aed;
   --accent-hover: #6d28d9;
   --footer-text: #9ca3af;
-  --glow-opacity: 0.4;
+  --glow-opacity: 0.3;
+
+  /* ─── Light-mode semantic tokens (overlay / glass / interactive) ─── */
+  --overlay-soft: rgba(0, 0, 0, 0.05);
+  --overlay-medium: rgba(0, 0, 0, 0.12);
+  --overlay-strong: rgba(0, 0, 0, 0.16);
+  --ring-track: rgba(0, 0, 0, 0.10);
+  --pill-bg: rgba(0, 0, 0, 0.06);
+  --pill-border: rgba(0, 0, 0, 0.15);
+  --glass-bg: rgba(210, 214, 226, 0.85);
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-quaternary: #9ca3af;
+  --shadow-color: rgba(0, 0, 0, 0.10);
+  --dashed-border: #9ca3af;
+  --active-nav-bg: rgba(124, 58, 237, 0.10);
+  --active-nav-text: #7c3aed;
+  --active-nav-border: rgba(124, 58, 237, 0.30);
 }
 
 @theme inline {
@@ -75,4 +111,408 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ─── Tiptap Editor Styles ─── */
+.tiptap-editor .tiptap {
+  outline: none;
+  min-height: 500px;
+  padding: 1.5rem 2rem;
+  color: var(--body-text);
+  caret-color: var(--accent);
+}
+
+.tiptap-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-text);
+  pointer-events: none;
+  height: 0;
+}
+
+.tiptap-editor .tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--heading-text);
+  margin: 1.5rem 0 0.75rem;
+  line-height: 1.2;
+}
+
+.tiptap-editor .tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--heading-text);
+  margin: 1.25rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+.tiptap-editor .tiptap h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--heading-text);
+  margin: 1rem 0 0.5rem;
+  line-height: 1.4;
+}
+
+.tiptap-editor .tiptap p {
+  margin: 0.5rem 0;
+  line-height: 1.7;
+}
+
+.tiptap-editor .tiptap ul,
+.tiptap-editor .tiptap ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.tiptap-editor .tiptap ul {
+  list-style-type: disc;
+}
+
+.tiptap-editor .tiptap ol {
+  list-style-type: decimal;
+}
+
+.tiptap-editor .tiptap li {
+  margin: 0.25rem 0;
+}
+
+.tiptap-editor .tiptap li p {
+  margin: 0;
+}
+
+.tiptap-editor .tiptap blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: var(--subtle-text);
+  font-style: italic;
+}
+
+.tiptap-editor .tiptap code {
+  background: rgba(124, 58, 237, 0.15);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.875em;
+  color: #c4b5fd;
+}
+
+.tiptap-editor .tiptap pre {
+  background: #0d0f17;
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.light .tiptap-editor .tiptap pre {
+  background: #f3f4f6;
+}
+
+.light .tiptap-editor .tiptap code {
+  background: rgba(124, 58, 237, 0.1);
+  color: #6d28d9;
+}
+
+.tiptap-editor .tiptap pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+}
+
+.tiptap-editor .tiptap hr {
+  border: none;
+  border-top: 2px solid var(--card-border);
+  margin: 1.5rem 0;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.tiptap-editor .tiptap hr:hover {
+  border-top-color: var(--accent);
+}
+
+.tiptap-editor .tiptap hr.ProseMirror-selectednode {
+  border-top-color: var(--accent);
+  outline: none;
+}
+
+.tiptap-editor .tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+}
+
+.light .tiptap-editor .tiptap img {
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.tiptap-editor .tiptap img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Tables — Notion-style */
+.tiptap-editor .tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.tiptap-editor .tiptap th,
+.tiptap-editor .tiptap td {
+  border: 1px solid var(--card-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  min-width: 80px;
+  position: relative;
+  font-size: 0.875rem;
+}
+
+.light .tiptap-editor .tiptap th,
+.light .tiptap-editor .tiptap td {
+  border: 1px solid #d1d5db;
+}
+
+.tiptap-editor .tiptap th {
+  background: transparent;
+  font-weight: 500;
+  color: var(--muted-text);
+  font-size: 0.8rem;
+}
+
+.light .tiptap-editor .tiptap th {
+  background: #f9fafb;
+}
+
+.tiptap-editor .tiptap td {
+  background: transparent;
+  color: var(--body-text);
+}
+
+.tiptap-editor .tiptap .selectedCell {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+/* Table resize handle */
+.tiptap-editor .tiptap .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background: var(--accent);
+  cursor: col-resize;
+}
+
+.tiptap-editor .tiptap .tableWrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+/* Mark / Highlight */
+.tiptap-editor .tiptap mark {
+  border-radius: 2px;
+  padding: 0.1rem 0.2rem;
+}
+
+/* ─── Canvas-style editor ─── */
+.tiptap-editor-canvas .tiptap {
+  position: relative;
+  min-height: 800px;
+  overflow: visible;
+}
+
+/* ─── Freely-positioned Image ─── */
+.resizable-image-wrapper {
+  line-height: 0;
+  border-radius: 0.75rem;
+  transition: box-shadow 0.15s;
+}
+
+.resizable-image-wrapper:hover {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+.resizable-image-wrapper.is-dragging {
+  opacity: 0.85;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.resizable-image-wrapper img {
+  display: block;
+  border-radius: 0.75rem;
+  height: auto;
+  user-select: none;
+}
+
+.light .resizable-image-wrapper img {
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.resizable-image-wrapper.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+.resizable-image-wrapper.is-multi-selected {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.resizable-image-wrapper .resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 2px solid var(--card-bg);
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.resizable-image-wrapper:hover .resize-handle,
+.resizable-image-wrapper.ProseMirror-selectednode .resize-handle {
+  opacity: 1;
+}
+
+.resizable-image-wrapper .resize-handle-br {
+  bottom: -4px;
+  right: -4px;
+  cursor: nwse-resize;
+}
+
+
+/* ─── Code Block with Delete Button ─── */
+.code-block-wrapper {
+  position: relative;
+}
+
+.code-block-wrapper pre {
+  background: #0d0f17;
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.light .code-block-wrapper pre {
+  background: #f3f4f6;
+}
+
+.code-block-wrapper pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+}
+
+.code-block-delete-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.5rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  z-index: 10;
+  color: var(--muted-text);
+  background: transparent;
+  border: none;
+}
+
+.code-block-wrapper:hover .code-block-delete-btn {
+  opacity: 1;
+}
+
+.code-block-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+/* ─── Drawing Canvas ─── */
+.drawing-block {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin: 1rem 0;
+  border: 1px solid var(--card-border);
+  background: #fff;
+}
+
+.light .drawing-block {
+  border: 2px solid #d1d5db;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.drawing-block canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+.drawing-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--card-border);
+  background: var(--card-bg);
+  flex-wrap: wrap;
+}
+
+.drawing-toolbar button {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: var(--body-text);
+  border: 1px solid transparent;
+}
+
+.drawing-toolbar button:hover {
+  background: var(--hover-overlay);
+}
+
+.drawing-toolbar button.active {
+  background: rgba(124, 58, 237, 0.25);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #a78bfa;
+}
+
+.drawing-toolbar .brush-size-slider {
+  width: 60px;
+  accent-color: var(--accent);
+}
+
+/* ─── Image loading shimmer ─── */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }

@@ -8,6 +8,7 @@ const NAV_LINKS = [
     { href: '/dashboard', label: 'Home', icon: '🏠', exact: true },
     { href: '/dashboard/focus', label: 'Focus', icon: '⏱️', exact: false },
     { href: '/dashboard/tasks', label: 'Tasks', icon: '✅', exact: false },
+    { href: '/dashboard/notes', label: 'Notes', icon: '📝', exact: false },
     { href: '/dashboard/storage', label: 'Storage', icon: '📁', exact: false },
 ]
 
@@ -66,10 +67,13 @@ export default function Sidebar() {
                             className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
                                 ${collapsed ? 'justify-center p-2.5 mx-auto w-11 h-11' : 'px-3 py-2.5'}
                                 ${active
-                                    ? 'bg-violet-600/20 text-violet-300 border border-violet-500/30 shadow-[0_0_10px_rgba(139,92,246,0.1)]'
+                                    ? 'border shadow-sm'
                                     : 'border border-transparent'
                                 }`}
-                            style={!active ? { color: 'var(--muted-text)' } : undefined}
+                            style={active
+                                ? { background: 'var(--active-nav-bg)', color: 'var(--active-nav-text)', borderColor: 'var(--active-nav-border)' }
+                                : { color: 'var(--muted-text)' }
+                            }
                         >
                             <span className="text-lg shrink-0 flex items-center justify-center">{icon}</span>
                             {!collapsed && <span>{label}</span>}

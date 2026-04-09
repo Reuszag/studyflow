@@ -49,7 +49,7 @@ export default function LandingPage() {
             {/* Hero */}
             <section className="relative z-10 max-w-5xl mx-auto px-8 pt-24 pb-32 text-center">
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-8">
+                <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 text-sm mb-8" style={{ color: 'var(--active-nav-text)' }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
                     Built for focused students
                 </div>
@@ -185,7 +185,7 @@ export default function LandingPage() {
 
             {/* CTA */}
             <section className="relative z-10 max-w-3xl mx-auto px-8 pb-32 text-center">
-                <div className="bg-gradient-to-br from-violet-900/30 to-indigo-900/20 border border-violet-500/20 rounded-3xl p-12">
+                <div className="bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20 rounded-3xl p-12">
                     <h2 className="text-3xl font-bold mb-3" style={{ color: 'var(--heading-text)' }}>Ready to supercharge your studies?</h2>
                     <p className="mb-8" style={{ color: 'var(--subtle-text)' }}>Join students already using StudyFlow to stay focused and on track.</p>
                     <Link

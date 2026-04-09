@@ -15,10 +15,11 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
                 w-10 h-10 rounded-xl
                 transition-all duration-300 cursor-pointer
                 ${theme === 'dark'
-                    ? 'bg-white/10 hover:bg-white/20 text-yellow-300'
-                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}
+                    ? 'text-yellow-300'
+                    : 'text-gray-700'}
                 ${className}
             `}
+            style={{ background: 'var(--overlay-medium)' }}
         >
             {/* Sun icon */}
             <svg
