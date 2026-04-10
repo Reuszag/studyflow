@@ -123,7 +123,7 @@ export default function PomodoroTimer() {
             )}
 
             {/* Card */}
-            <div className="w-full max-w-md rounded-3xl p-8 flex flex-col items-center gap-8 relative overflow-hidden group" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: '0 0 50px var(--shadow-color)' }}>
+            <div className="w-full max-w-md rounded-3xl p-8 flex flex-col items-center gap-8 relative overflow-hidden group" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
 
                 {/* Settings icon */}
                 <button

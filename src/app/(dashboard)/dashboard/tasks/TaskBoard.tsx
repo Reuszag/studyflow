@@ -148,7 +148,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
         <div className="flex-1 flex flex-col min-h-0 transition-colors duration-300" style={{ background: 'var(--background)' }}>
 
             {/* Top Bar Form */}
-            <div className="rounded-2xl p-6 shadow-xl mb-6 shrink-0" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+            <div className="rounded-2xl p-6 mb-6 shrink-0" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                 <form
                     ref={formRef}
                     action={handleAddTask}
@@ -323,7 +323,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                     return (
                         <div
                             key={col.id}
-                            className="flex-1 flex flex-col rounded-2xl overflow-hidden shadow-xl"
+                            className="flex-1 flex flex-col rounded-2xl overflow-hidden"
                             style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, col.id)}
@@ -342,7 +342,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                             {/* Task List (Drop Zone) */}
                             <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${columnTasks.length === 0 ? 'flex items-center justify-center' : ''}`}>
                                 {columnTasks.length === 0 ? (
-                                    <div className="text-center py-10 opacity-40">
+                                    <div className="text-center py-10 opacity-60">
                                         <div className="text-sm font-medium rounded-xl px-6 py-4 border border-dashed" style={{ color: 'var(--text-tertiary)', borderColor: 'var(--dashed-border)' }}>
                                             Drop tasks here
                                         </div>
