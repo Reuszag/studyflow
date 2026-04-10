@@ -319,6 +319,12 @@ The notes section is a modern collaborative notetaking feature built on **TipTap
 
 ---
 
+## Profile Feature
+
+- **Change Password**: Collapsible section in `ProfileForm.tsx`. Verifies the current password by re-authenticating via `signInWithPassword`, then calls `supabase.auth.updateUser({ password })`. The `changePassword` server action is in `profile/actions.ts`. Enforces the same 5-rule password policy as the register page (length, uppercase, lowercase, number, special char). All three password fields have eye toggle visibility buttons.
+
+---
+
 ## Focus Timer (Persistent)
 
 - **Global timer state**: Timer state (mode, timeLeft, running, pomodoroCount, settings) lives in `TimerContext` (`src/lib/TimerContext.tsx`), provided by `DashboardClientWrapper` at the dashboard layout level. This means the timer keeps running when navigating between dashboard pages.

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { updateProfile, deleteAvatar } from './actions'
+import { updateProfile, deleteAvatar, changePassword } from './actions'
 
 const TIMEZONES = [
     'UTC',
@@ -51,6 +51,18 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
     const [error, setError] = useState('')
     const [showAvatarMenu, setShowAvatarMenu] = useState(false)
     const [showImagePreview, setShowImagePreview] = useState(false)
+
+    // Change password state
+    const [showPasswordSection, setShowPasswordSection] = useState(false)
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmNewPassword, setConfirmNewPassword] = useState('')
+    const [showCurrentPw, setShowCurrentPw] = useState(false)
+    const [showNewPw, setShowNewPw] = useState(false)
+    const [showConfirmNewPw, setShowConfirmNewPw] = useState(false)
+    const [pwSaving, setPwSaving] = useState(false)
+    const [pwMessage, setPwMessage] = useState('')
+    const [pwError, setPwError] = useState('')
 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const menuRef = useRef<HTMLDivElement>(null)
@@ -177,6 +189,53 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
         }
         setDeleting(false)
     }
+
+    const PASSWORD_RULES = [
+        { key: 'length', test: (pw: string) => pw.length >= 8, label: 'At least 8 characters' },
+        { key: 'uppercase', test: (pw: string) => /[A-Z]/.test(pw), label: 'One uppercase letter' },
+        { key: 'lowercase', test: (pw: string) => /[a-z]/.test(pw), label: 'One lowercase letter' },
+        { key: 'number', test: (pw: string) => /[0-9]/.test(pw), label: 'One number' },
+        { key: 'special', test: (pw: string) => /[^A-Za-z0-9]/.test(pw), label: 'One special character' },
+    ]
+    const pwRules = PASSWORD_RULES.map(r => ({ ...r, pass: r.test(newPassword) }))
+    const allPwRulesPassed = pwRules.every(r => r.pass)
+    const pwsMatch = newPassword === confirmNewPassword
+
+    async function handleChangePassword() {
+        setPwMessage('')
+        setPwError('')
+        if (!allPwRulesPassed) { setPwError('New password does not meet all requirements.'); return }
+        if (!pwsMatch) { setPwError('New passwords do not match.'); return }
+        if (currentPassword === newPassword) { setPwError('New password must be different from current password.'); return }
+        setPwSaving(true)
+        const result = await changePassword(currentPassword, newPassword)
+        if (result.error) {
+            setPwError(result.error)
+        } else {
+            setPwMessage('Password changed successfully!')
+            setCurrentPassword('')
+            setNewPassword('')
+            setConfirmNewPassword('')
+            setShowPasswordSection(false)
+        }
+        setPwSaving(false)
+    }
+
+    const EyeIcon = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
+        <button
+            type="button"
+            onClick={onToggle}
+            className="absolute inset-y-0 right-3 flex items-center transition-opacity opacity-50 hover:opacity-100"
+            style={{ color: 'var(--label-text)' }}
+            tabIndex={-1}
+        >
+            {show ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            )}
+        </button>
+    )
 
     return (
         <>
@@ -313,6 +372,98 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                             </option>
                         ))}
                     </select>
+                </div>
+
+                {/* Change Password */}
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--card-border)' }}>
+                    <button
+                        type="button"
+                        onClick={() => { setShowPasswordSection(v => !v); setPwError(''); setPwMessage('') }}
+                        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors"
+                        style={{ background: 'var(--overlay-soft)', color: 'var(--text-secondary)' }}
+                    >
+                        <span className="flex items-center gap-2">🔒 Change Password</span>
+                        <span className="text-xs" style={{ color: 'var(--text-quaternary)', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.2s' }}>▼</span>
+                    </button>
+
+                    {showPasswordSection && (
+                        <div className="px-4 pb-4 pt-3 space-y-3" style={{ background: 'var(--overlay-soft)' }}>
+                            {/* Current Password */}
+                            <div>
+                                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--label-text)' }}>Current Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showCurrentPw ? 'text' : 'password'}
+                                        value={currentPassword}
+                                        onChange={e => setCurrentPassword(e.target.value)}
+                                        required
+                                        className="w-full rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
+                                        placeholder="Enter current password"
+                                    />
+                                    <EyeIcon show={showCurrentPw} onToggle={() => setShowCurrentPw(v => !v)} />
+                                </div>
+                            </div>
+
+                            {/* New Password */}
+                            <div>
+                                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--label-text)' }}>New Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showNewPw ? 'text' : 'password'}
+                                        value={newPassword}
+                                        onChange={e => setNewPassword(e.target.value)}
+                                        required
+                                        className="w-full rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
+                                        placeholder="Enter new password"
+                                    />
+                                    <EyeIcon show={showNewPw} onToggle={() => setShowNewPw(v => !v)} />
+                                </div>
+                                {newPassword.length > 0 && (
+                                    <ul className="mt-2 space-y-0.5">
+                                        {pwRules.map(r => (
+                                            <li key={r.key} className="flex items-center gap-1.5 text-xs" style={{ color: r.pass ? '#22c55e' : 'var(--muted-text)' }}>
+                                                <span>{r.pass ? '✓' : '○'}</span> {r.label}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
+                            {/* Confirm New Password */}
+                            <div>
+                                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--label-text)' }}>Confirm New Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showConfirmNewPw ? 'text' : 'password'}
+                                        value={confirmNewPassword}
+                                        onChange={e => setConfirmNewPassword(e.target.value)}
+                                        required
+                                        className="w-full rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                                        style={{ background: 'var(--input-bg)', border: `1px solid ${confirmNewPassword.length > 0 && !pwsMatch ? '#f87171' : 'var(--input-border)'}`, color: 'var(--input-text)' }}
+                                        placeholder="Repeat new password"
+                                    />
+                                    <EyeIcon show={showConfirmNewPw} onToggle={() => setShowConfirmNewPw(v => !v)} />
+                                </div>
+                                {confirmNewPassword.length > 0 && !pwsMatch && (
+                                    <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
+                                )}
+                            </div>
+
+                            {pwError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">❌ {pwError}</p>}
+                            {pwMessage && <p className="text-green-400 text-xs bg-green-500/10 border border-green-500/20 px-3 py-2 rounded-lg">✅ {pwMessage}</p>}
+
+                            <button
+                                type="button"
+                                onClick={handleChangePassword}
+                                disabled={pwSaving || !currentPassword || !newPassword || !confirmNewPassword}
+                                className="w-full py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                {pwSaving ? 'Updating...' : 'Update Password'}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Messages */}
