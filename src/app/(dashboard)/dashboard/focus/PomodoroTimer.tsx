@@ -139,7 +139,9 @@ export default function PomodoroTimer() {
                     style={{ background: 'var(--overlay-soft)', color: 'var(--text-tertiary)' }}
                     title="Timer Settings"
                 >
-                    ⚙️
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+                    </svg>
                 </button>
 
                 {/* Title */}
@@ -268,14 +270,24 @@ export default function PomodoroTimer() {
                             border: running ? `1px solid ${cfg.color}33` : '1px solid transparent',
                         }}
                     >
-                        {running ? '⏸ Pause Timer' : '▶ Start Timer'}
+                        {running ? (
+                            <>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                                Pause Timer
+                            </>
+                        ) : (
+                            <>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Start Timer
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
 
             {/* Tips */}
             <p className="mt-8 text-center text-xs max-w-sm" style={{ color: 'var(--text-quaternary)' }}>
-                💡 Work for your set focus time, take a short break. Every 4 sessions, you deserve a long break. ⚙️ Click the gear to customize your times.
+                Work for your set focus time, take a short break. Every 4 sessions, take a long break. Use the settings icon to customize your times.
             </p>
         </div>
     )

@@ -61,8 +61,14 @@ export default function MiniTimer() {
                         style={{ transition: 'stroke-dashoffset 0.8s ease' }}
                     />
                 </svg>
-                <span className="text-[10px] font-bold z-10" style={{ color: cfg.color }}>
-                    {mode === 'pomodoro' ? '🍅' : mode === 'short' ? '☕' : '🌴'}
+                <span className="z-10 flex items-center justify-center" style={{ color: cfg.color }}>
+                    {mode === 'pomodoro' ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    ) : mode === 'short' ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                    ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21H7"/><path d="M12 21V3"/><path d="M12 8c2-3 6-3 6 0s-4 5-6 8"/><path d="M12 8c-2-3-6-3-6 0s4 5 6 8"/></svg>
+                    )}
                 </span>
             </div>
 
@@ -93,7 +99,11 @@ export default function MiniTimer() {
                 }}
                 title={running ? 'Pause' : 'Resume'}
             >
-                {running ? '⏸' : '▶'}
+                {running ? (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                ) : (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                )}
             </button>
         </div>
     )

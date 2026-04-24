@@ -86,6 +86,48 @@ export async function updateTaskStatus(id: string, status: string) {
     return { success: true }
 }
 
+export async function archiveTask(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('tasks')
+        .update({
+            status: 'archived',
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+
+    if (error) {
+        console.error('Error archiving task:', error)
+        return { error: `Failed to archive task: ${error.message}` }
+    }
+
+    revalidatePath('/dashboard/tasks')
+    revalidatePath('/dashboard')
+    return { success: true }
+}
+
+export async function unarchiveTask(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('tasks')
+        .update({
+            status: 'ongoing',
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+
+    if (error) {
+        console.error('Error unarchiving task:', error)
+        return { error: `Failed to unarchive task: ${error.message}` }
+    }
+
+    revalidatePath('/dashboard/tasks')
+    revalidatePath('/dashboard')
+    return { success: true }
+}
+
 export async function deleteTask(id: string) {
     const supabase = await createClient()
 

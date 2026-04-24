@@ -2,6 +2,7 @@
 
 import { TimerProvider } from '@/lib/TimerContext'
 import MiniTimer from './MiniTimer'
+import NoteNotifications from './NoteNotifications'
 import type { ReactNode } from 'react'
 
 export default function DashboardClientWrapper({ children }: { children: ReactNode }) {
@@ -9,6 +10,7 @@ export default function DashboardClientWrapper({ children }: { children: ReactNo
         <TimerProvider>
             {children}
             <MiniTimer />
+            <NoteNotifications />
         </TimerProvider>
     )
 }

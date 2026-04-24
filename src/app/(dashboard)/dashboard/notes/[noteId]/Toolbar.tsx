@@ -3,7 +3,39 @@
 import { type Editor } from '@tiptap/react'
 import { useState, useRef, useEffect } from 'react'
 
-const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '30', '36']
+function FontSizeInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+    const [inputVal, setInputVal] = useState(value)
+    useEffect(() => { setInputVal(value) }, [value])
+
+    const apply = (raw: string) => {
+        const num = parseInt(raw, 10)
+        if (isNaN(num) || num < 12) { setInputVal(value); return }
+        setInputVal(num.toString())
+        onChange(num.toString())
+    }
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const filtered = e.target.value.replace(/[^0-9]/g, '')
+        setInputVal(filtered)
+    }
+
+    return (
+        <div className="flex items-center gap-0.5">
+            <input
+                type="text"
+                inputMode="numeric"
+                value={inputVal}
+                onChange={handleChange}
+                onBlur={(e) => apply(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { apply((e.target as HTMLInputElement).value); e.preventDefault() } }}
+                className="w-12 h-8 text-xs text-center rounded-lg border border-transparent px-1 focus:outline-none focus:border-violet-500/50"
+                style={{ color: 'var(--body-text)', background: 'var(--overlay-soft)' }}
+                title="Font size"
+            />
+            <span className="text-xs pr-1" style={{ color: 'var(--text-tertiary)' }}>px</span>
+        </div>
+    )
+}
 
 function ToolbarButton({ onClick, active, disabled, title, children }: {
     onClick: () => void
@@ -88,23 +120,235 @@ function Dropdown({ value, options, onChange, title, width = 'w-16' }: {
     )
 }
 
+const FONT_FAMILIES = [
+    { label: 'Default', value: '' },
+    { label: 'Inter', value: 'Inter, sans-serif' },
+    { label: 'Georgia', value: 'Georgia, serif' },
+    { label: 'Times New Roman', value: '"Times New Roman", serif' },
+    { label: 'Courier New', value: '"Courier New", monospace' },
+    { label: 'Arial', value: 'Arial, sans-serif' },
+    { label: 'Trebuchet MS', value: '"Trebuchet MS", sans-serif' },
+    { label: 'Cursive', value: 'cursive' },
+]
+
+function FontFamilyDropdown({ editor }: { editor: Editor }) {
+    const [open, setOpen] = useState(false)
+    const ref = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    const currentFamily = editor.getAttributes('textStyle')?.fontFamily || ''
+    const currentLabel = FONT_FAMILIES.find(f => f.value === currentFamily)?.label || 'Default'
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                title="Font family"
+                className="w-24 h-8 rounded-lg flex items-center justify-between px-2 text-xs font-medium transition-colors hover:bg-[var(--overlay-medium)] cursor-pointer border border-transparent"
+                style={{ color: 'var(--body-text)', fontFamily: currentFamily || 'inherit' }}
+            >
+                <span className="truncate">{currentLabel}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            {open && (
+                <div
+                    className="absolute top-full left-0 mt-1 rounded-lg shadow-xl z-50 py-1"
+                    style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', minWidth: 180 }}
+                >
+                    {FONT_FAMILIES.map((f) => (
+                        <button
+                            key={f.value || 'default'}
+                            type="button"
+                            onClick={() => {
+                                if (!f.value) {
+                                    editor.chain().focus().unsetFontFamily().run()
+                                } else {
+                                    editor.chain().focus().setFontFamily(f.value).run()
+                                }
+                                setOpen(false)
+                            }}
+                            className="w-full text-left px-3 py-1.5 text-sm hover:bg-[var(--overlay-medium)] transition-colors cursor-pointer"
+                            style={{
+                                color: f.value === currentFamily ? '#a78bfa' : 'var(--body-text)',
+                                fontFamily: f.value || 'inherit',
+                            }}
+                        >
+                            {f.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
+const HIGHLIGHT_COLORS = [
+    { label: 'Yellow', value: '#fef08a' },
+    { label: 'Green', value: '#bbf7d0' },
+    { label: 'Blue', value: '#bfdbfe' },
+    { label: 'Pink', value: '#fbcfe8' },
+    { label: 'Orange', value: '#fed7aa' },
+    { label: 'Purple', value: '#e9d5ff' },
+    { label: 'Red', value: '#fecaca' },
+    { label: 'Cyan', value: '#a5f3fc' },
+]
+
+function HighlightPicker({ editor }: { editor: Editor }) {
+    const [open, setOpen] = useState(false)
+    const [activeColor, setActiveColor] = useState('#fef08a')
+    const ref = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    const isActive = editor.isActive('highlight')
+    const currentColor = editor.getAttributes('highlight')?.color || activeColor
+
+    return (
+        <div ref={ref} className="relative flex items-center">
+            <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleHighlight({ color: activeColor }).run()}
+                title="Highlight"
+                className={`w-8 h-8 rounded-l-lg flex items-center justify-center text-sm font-bold transition-colors border-r-0
+                    ${isActive
+                        ? 'bg-violet-500/20 border border-violet-500/30'
+                        : 'hover:bg-[var(--overlay-medium)] border border-transparent'
+                    } cursor-pointer`}
+                style={isActive ? { color: 'var(--active-nav-text)' } : { color: 'var(--body-text)' }}
+            >
+                <span className="px-0.5 rounded text-xs font-bold" style={{ background: currentColor, color: '#000' }}>H</span>
+            </button>
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                title="Highlight color"
+                className="w-4 h-8 rounded-r-lg flex items-center justify-center transition-colors hover:bg-[var(--overlay-medium)] border border-transparent cursor-pointer"
+                style={{ color: 'var(--text-tertiary)' }}
+            >
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            {open && (
+                <div
+                    className="absolute top-full left-0 mt-1 rounded-lg shadow-xl z-50 p-2 grid grid-cols-4 gap-1"
+                    style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', minWidth: 120 }}
+                >
+                    {HIGHLIGHT_COLORS.map(c => (
+                        <button
+                            key={c.value}
+                            type="button"
+                            title={c.label}
+                            onClick={() => {
+                                setActiveColor(c.value)
+                                editor.chain().focus().setHighlight({ color: c.value }).run()
+                                setOpen(false)
+                            }}
+                            className="w-6 h-6 rounded cursor-pointer hover:scale-110 transition-transform"
+                            style={{
+                                background: c.value,
+                                border: c.value === currentColor ? '2px solid #7c3aed' : '2px solid transparent',
+                                outline: 'none',
+                            }}
+                        />
+                    ))}
+                    <div className="col-span-4 mt-1 pt-1" style={{ borderTop: '1px solid var(--card-border)' }}>
+                        <div className="relative w-full">
+                            <input
+                                type="color"
+                                className="absolute inset-0 w-full h-6 opacity-0 cursor-pointer"
+                                value={currentColor}
+                                onChange={(e) => {
+                                    setActiveColor(e.target.value)
+                                    editor.chain().focus().setHighlight({ color: e.target.value }).run()
+                                }}
+                                title="Custom color"
+                            />
+                            <div className="w-full h-6 rounded text-xs flex items-center justify-center gap-1 hover:bg-[var(--overlay-medium)]" style={{ color: 'var(--text-tertiary)', border: '1px dashed var(--card-border)' }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                Custom
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
 export default function Toolbar({ editor, onImageUpload, onDrawingInsert }: { editor: Editor | null; onImageUpload: () => void; onDrawingInsert: () => void }) {
-    // Force re-render on editor state changes so heading/font size stay in sync
     const [, setTick] = useState(0)
+    const [lastFontSize, setLastFontSize] = useState<string | null>(null)
+    const docChangedRef = useRef(false)
+
     useEffect(() => {
         if (!editor) return
-        const handler = () => setTick(t => t + 1)
-        editor.on('selectionUpdate', handler)
-        editor.on('transaction', handler)
-        return () => {
-            editor.off('selectionUpdate', handler)
-            editor.off('transaction', handler)
+        const tickHandler = () => setTick(t => t + 1)
+
+        const applyStoredMarks = () => {
+            if (!lastFontSize || !editor.state.selection.empty) return
+            const { schema, tr } = editor.state
+            const textStyleMark = schema.marks.textStyle
+            if (textStyleMark) {
+                editor.view.dispatch(tr.setStoredMarks([textStyleMark.create({ fontSize: `${lastFontSize}px` })]))
+            }
         }
-    }, [editor])
+
+        const updateHandler = () => {
+            // Content changed — flag so selectionUpdate doesn't overwrite state
+            docChangedRef.current = true
+            const fontSize = editor.getAttributes('textStyle')?.fontSize
+            if (!fontSize) applyStoredMarks()
+        }
+
+        const selectionHandler = () => {
+            if (docChangedRef.current) {
+                // Selection moved due to content change (delete/type) — don't overwrite state
+                docChangedRef.current = false
+                return
+            }
+            // Pure navigation — update state from cursor position
+            const fontSize = editor.getAttributes('textStyle')?.fontSize
+            if (fontSize) {
+                setLastFontSize(fontSize.replace('px', ''))
+            } else {
+                applyStoredMarks()
+            }
+        }
+
+        editor.on('update', updateHandler)
+        editor.on('selectionUpdate', selectionHandler)
+        editor.on('transaction', tickHandler)
+        return () => {
+            editor.off('update', updateHandler)
+            editor.off('selectionUpdate', selectionHandler)
+            editor.off('transaction', tickHandler)
+        }
+    }, [editor, lastFontSize])
+
+    const storedFontSize = editor?.state.storedMarks?.find(m => m.type.name === 'textStyle')?.attrs.fontSize?.replace('px', '')
+    const currentFontSize = editor?.getAttributes('textStyle')?.fontSize?.replace('px', '') || storedFontSize || lastFontSize || '16'
+
+    // Keep cursor height in sync with current font size on empty paragraphs
+    useEffect(() => {
+        if (!editor) return
+        const el = editor.view.dom.closest('.tiptap-editor') as HTMLElement | null
+        el?.style.setProperty('--editor-cursor-size', `${currentFontSize}px`)
+    })
 
     if (!editor) return null
-
-    const currentFontSize = editor.getAttributes('textStyle')?.fontSize?.replace('px', '') || '16'
 
     const currentHeading =
         editor.isActive('heading', { level: 1 }) ? 'H1' :
@@ -148,15 +392,19 @@ export default function Toolbar({ editor, onImageUpload, onDrawingInsert }: { ed
             />
 
             {/* Font size */}
-            <Dropdown
-                value={`${currentFontSize}px`}
-                options={FONT_SIZES.map((s) => ({ label: `${s}px`, value: s }))}
+            <FontSizeInput
+                value={currentFontSize}
                 onChange={(val) => {
+                    setLastFontSize(val)
                     editor.chain().focus().setFontSize(`${val}px`).run()
+                    // Update CSS var immediately so empty-paragraph caret reflects new size
+                    const el = editor.view.dom.closest('.tiptap-editor') as HTMLElement | null
+                    el?.style.setProperty('--editor-cursor-size', `${val}px`)
                 }}
-                title="Font size"
-                width="w-16"
             />
+
+            {/* Font family */}
+            <FontFamilyDropdown editor={editor} />
 
             <Divider />
 
@@ -191,13 +439,8 @@ export default function Toolbar({ editor, onImageUpload, onDrawingInsert }: { ed
                         style={{ background: editor.getAttributes('textStyle')?.color || 'var(--body-text)' }} />
                 </div>
             </div>
-            <ToolbarButton
-                onClick={() => editor.chain().focus().toggleHighlight({ color: '#fef08a' }).run()}
-                active={editor.isActive('highlight')}
-                title="Highlight"
-            >
-                <span className="px-0.5 rounded" style={{ background: '#fef08a', color: '#000' }}>H</span>
-            </ToolbarButton>
+            {/* Highlight color picker */}
+            <HighlightPicker editor={editor} />
 
             <Divider />
 

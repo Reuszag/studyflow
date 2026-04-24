@@ -120,16 +120,16 @@ export function TimerProvider({ children }: { children: ReactNode }) {
             if (newCount % POMODOROS_BEFORE_LONG === 0) {
                 setMode('long')
                 setTimeLeft(modes.long.duration)
-                setSessionLabel(`🎉 ${newCount} Pomodoros done! Long break time.`)
+                setSessionLabel(`${newCount} Pomodoros done! Time for a long break.`)
             } else {
                 setMode('short')
                 setTimeLeft(modes.short.duration)
-                setSessionLabel(`✅ Pomodoro #${newCount} done! Short break.`)
+                setSessionLabel(`Pomodoro #${newCount} done! Take a short break.`)
             }
         } else {
             setMode('pomodoro')
             setTimeLeft(modes.pomodoro.duration)
-            setSessionLabel(`🍅 Break over. Back to focus!`)
+            setSessionLabel(`Break over. Back to focus!`)
         }
         setRunning(false)
     }, [modes])

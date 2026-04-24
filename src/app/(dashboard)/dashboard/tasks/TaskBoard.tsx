@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { addTask, toggleTask, deleteTask, updateTaskStatus } from './actions'
+import { addTask, toggleTask, deleteTask, updateTaskStatus, archiveTask, unarchiveTask } from './actions'
 
 type Task = {
     id: string
@@ -24,6 +24,7 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
+    const [isArchiveOpen, setIsArchiveOpen] = useState(false)
     const formRef = useRef<HTMLFormElement>(null)
 
     const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -83,6 +84,28 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
         }
     }
 
+    const handleArchive = async (id: string) => {
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'archived' } : t))
+        const result = await archiveTask(id)
+        if (result.error) {
+            setTasks(initialTasks)
+            showToast(result.error, 'error')
+        } else {
+            showToast('Task archived', 'success')
+        }
+    }
+
+    const handleUnarchive = async (id: string) => {
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'ongoing' } : t))
+        const result = await unarchiveTask(id)
+        if (result.error) {
+            setTasks(initialTasks)
+            showToast(result.error, 'error')
+        } else {
+            showToast('Task restored to On Going', 'success')
+        }
+    }
+
     const handleDragStart = (e: React.DragEvent, id: string) => {
         e.dataTransfer.setData('taskId', id)
         // Set a slight delay to allow the drag image to capture before hiding the original
@@ -115,7 +138,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
             setTasks(initialTasks)
             showToast(result.error, 'error')
         } else {
-            showToast(`Task moved to ${newStatus === 'ongoing' ? 'On Going' : 'Completed'}`, 'success')
+            const label = newStatus === 'ongoing' ? 'On Going' : newStatus === 'completed' ? 'Completed' : 'Archived'
+            showToast(`Task moved to ${label}`, 'success')
         }
     }
 
@@ -145,10 +169,10 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
     ]
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 transition-colors duration-300" style={{ background: 'var(--background)' }}>
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden transition-colors duration-300" style={{ background: 'var(--background)' }}>
 
             {/* Top Bar Form */}
-            <div className="rounded-2xl p-6 mb-6 shrink-0" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+            <div className="rounded-2xl p-4 mb-4 shrink-0" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                 <form
                     ref={formRef}
                     action={handleAddTask}
@@ -316,20 +340,20 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
             </div>
 
             {/* Kanban Board */}
-            <div className="flex-1 flex gap-6 overflow-hidden pb-4">
+            <div className="flex gap-6 pb-4" style={{ height: 'calc(100vh - 26rem)' }}>
                 {columns.map(col => {
                     const columnTasks = tasks.filter(t => t.status === col.id)
 
                     return (
                         <div
                             key={col.id}
-                            className="flex-1 flex flex-col rounded-2xl overflow-hidden"
+                            className="flex-1 flex flex-col rounded-2xl min-h-0"
                             style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, col.id)}
                         >
                             {/* Column Header */}
-                            <div className="p-5 shrink-0 flex items-center justify-between" style={{ background: 'var(--card-bg-alt)', borderBottom: '1px solid var(--card-border)' }}>
+                            <div className="p-5 shrink-0 flex items-center justify-between rounded-t-2xl" style={{ background: 'var(--card-bg-alt)', borderBottom: '1px solid var(--card-border)' }}>
                                 <h3 className="font-semibold tracking-tight flex items-center gap-2" style={{ color: 'var(--heading-text)' }}>
                                     <div className={`w-2 h-2 rounded-full bg-${col.color}-500 shadow-[0_0_8px_rgba(var(--color-${col.color}-500),0.5)]`}></div>
                                     {col.title}
@@ -339,8 +363,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                 </div>
                             </div>
 
-                            {/* Task List (Drop Zone) */}
-                            <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${columnTasks.length === 0 ? 'flex items-center justify-center' : ''}`}>
+                            {/* Task List (Scrollable Drop Zone) */}
+                            <div className={`flex-1 overflow-y-auto p-4 space-y-3 min-h-0 ${columnTasks.length === 0 ? 'flex items-center justify-center' : ''}`}>
                                 {columnTasks.length === 0 ? (
                                     <div className="text-center py-10 opacity-60">
                                         <div className="text-sm font-medium rounded-xl px-6 py-4 border border-dashed" style={{ color: 'var(--text-tertiary)', borderColor: 'var(--dashed-border)' }}>
@@ -375,22 +399,39 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                                                     {task.status === 'completed' && <span className="text-[10px] font-bold">✓</span>}
                                                 </button>
 
-                                                <div className="flex-1 min-w-0 pr-6">
+                                                <div className="flex-1 min-w-0 pr-14">
                                                     <h4 className={`text-sm font-medium leading-snug ${task.status === 'completed' ? 'line-through' : ''}`}
                                                         style={{ color: task.status === 'completed' ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>
                                                         {task.title}
                                                     </h4>
                                                 </div>
 
-                                                {/* Delete Button (Hidden until hover) */}
-                                                <button
-                                                    onClick={() => handleDelete(task.id)}
-                                                    className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                                                    style={{ color: 'var(--text-quaternary)' }}
-                                                    title="Delete task"
-                                                >
-                                                    ✕
-                                                </button>
+                                                {/* Action buttons (hidden until hover) */}
+                                                <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {/* Archive button — only in Completed column */}
+                                                    {col.id === 'completed' && (
+                                                        <button
+                                                            onClick={() => handleArchive(task.id)}
+                                                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-amber-500/10 hover:text-amber-400 transition-colors"
+                                                            style={{ color: 'var(--text-quaternary)' }}
+                                                            title="Archive task"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                    {/* Delete button */}
+                                                    <button
+                                                        onClick={() => handleDelete(task.id)}
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-red-400 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20"
+                                                        title="Delete task"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div className="flex justify-between items-center pl-8 pt-1">
@@ -414,6 +455,109 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                     )
                 })}
             </div>
+
+            {/* Archive Section */}
+            {(() => {
+                const archivedTasks = tasks.filter(t => t.status === 'archived')
+                return (
+                    <div className="shrink-0 pb-4">
+                        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+                            {/* Archive Header (clickable to toggle) */}
+                            <button
+                                type="button"
+                                onClick={() => setIsArchiveOpen(v => !v)}
+                                className="w-full p-5 flex items-center justify-between transition-colors hover:bg-[var(--overlay-soft)]"
+                                style={{ background: 'var(--card-bg-alt)', borderBottom: isArchiveOpen ? '1px solid var(--card-border)' : 'none' }}
+                            >
+                                <h3 className="font-semibold tracking-tight flex items-center gap-2" style={{ color: 'var(--heading-text)' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-tertiary)' }}>
+                                        <polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" />
+                                    </svg>
+                                    Archive
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <div className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ color: 'var(--text-quaternary)', background: 'var(--overlay-soft)' }}>
+                                        {archivedTasks.length}
+                                    </div>
+                                    <span className="text-[10px] transition-transform duration-200 inline-block" style={{ color: 'var(--text-quaternary)', transform: isArchiveOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                </div>
+                            </button>
+
+                            {/* Archive Task List */}
+                            {isArchiveOpen && (
+                                <div className="p-4 max-h-64 overflow-y-auto">
+                                    {archivedTasks.length === 0 ? (
+                                        <div className="text-center py-6 opacity-60">
+                                            <div className="text-sm font-medium rounded-xl px-6 py-4 border border-dashed" style={{ color: 'var(--text-tertiary)', borderColor: 'var(--dashed-border)' }}>
+                                                No archived tasks
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {archivedTasks.map(task => (
+                                                <div
+                                                    key={task.id}
+                                                    className="group flex items-center gap-3 p-3 rounded-xl border transition-all duration-200"
+                                                    style={{ background: 'var(--overlay-soft)', borderColor: 'var(--pill-border)' }}
+                                                >
+                                                    {/* Archive icon */}
+                                                    <div className="w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center opacity-40" style={{ borderColor: 'var(--text-quaternary)' }}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-quaternary)' }}>
+                                                            <polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" />
+                                                        </svg>
+                                                    </div>
+
+                                                    {/* Title */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="text-sm font-medium line-through" style={{ color: 'var(--text-quaternary)' }}>
+                                                            {task.title}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Priority + Date (always visible, left of buttons) */}
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md border ${getPriorityColor(task.priority)}`}>
+                                                            {task.priority}
+                                                        </span>
+                                                        {task.planned_date && (
+                                                            <div className="text-[10px] font-medium flex items-center gap-1 px-2 py-0.5 rounded-md" style={{ color: 'var(--text-tertiary)', background: 'var(--overlay-medium)', border: '1px solid var(--pill-border)' }}>
+                                                                <span>📅</span>
+                                                                {new Date(task.planned_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Action buttons — always visible */}
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <button
+                                                            onClick={() => handleUnarchive(task.id)}
+                                                            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-violet-400 bg-violet-500/10 border border-violet-500/25 hover:bg-violet-500/20"
+                                                            title="Restore to On Going"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M9 14l-4-4 4-4" /><path d="M5 10h11a4 4 0 0 1 0 8h-1" />
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(task.id)}
+                                                            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-red-400 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20"
+                                                            title="Delete permanently"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )
+            })()}
 
             {/* Toast Notification */}
             {toast && (

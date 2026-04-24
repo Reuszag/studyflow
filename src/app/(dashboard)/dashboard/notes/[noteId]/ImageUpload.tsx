@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 interface ImageUploadProps {
     onInsert: (url: string) => void
     onClose: () => void
+    noteId: string
+    ownerId: string
 }
 
-export default function ImageUpload({ onInsert, onClose }: ImageUploadProps) {
+export default function ImageUpload({ onInsert, onClose, noteId, ownerId }: ImageUploadProps) {
     const [uploading, setUploading] = useState(false)
     const [error, setError] = useState('')
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -31,35 +32,28 @@ export default function ImageUpload({ onInsert, onClose }: ImageUploadProps) {
         setError('')
 
         try {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
+            // Upload via our server-side API route which handles storage RLS
+            // and stores the file under the note owner's folder.
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('noteId', noteId)
+            formData.append('ownerId', ownerId)
 
-            if (!user) {
-                setError('You must be logged in')
+            const response = await fetch('/api/upload-note-image', {
+                method: 'POST',
+                body: formData,
+            })
+
+            const result = await response.json()
+
+            if (!response.ok || !result.url) {
+                console.error('Upload error:', result.error)
+                setError(result.error || 'Failed to upload image')
                 setUploading(false)
                 return
             }
 
-            const timestamp = Date.now()
-            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-            const filePath = `${user.id}/${timestamp}_${safeName}`
-
-            const { error: uploadError } = await supabase.storage
-                .from('note-images')
-                .upload(filePath, file, { cacheControl: '3600', upsert: false })
-
-            if (uploadError) {
-                console.error('Upload error:', uploadError)
-                setError('Failed to upload image')
-                setUploading(false)
-                return
-            }
-
-            const { data: urlData } = supabase.storage
-                .from('note-images')
-                .getPublicUrl(filePath)
-
-            onInsert(urlData.publicUrl)
+            onInsert(result.url)
         } catch {
             setError('An unexpected error occurred')
         } finally {

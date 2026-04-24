@@ -58,15 +58,15 @@ export async function deleteFile(documentId: string, filePath: string) {
     return { success: true }
 }
 
-export async function getSignedUrl(filePath: string) {
+export async function getSignedUrl(filePath: string, download = false) {
     const supabase = await createClient()
 
     const { data, error } = await supabase.storage
         .from('documents')
-        .createSignedUrl(filePath, 3600, { download: true })
+        .createSignedUrl(filePath, 3600, download ? { download: true } : {})
 
     if (error || !data) {
-        return { error: 'Failed to generate download link' }
+        return { error: 'Failed to generate link' }
     }
 
     return { signedUrl: data.signedUrl }

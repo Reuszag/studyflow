@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 interface Stroke {
   points: { x: number; y: number }[]
@@ -14,6 +13,8 @@ interface DrawingCanvasProps {
   onSave: (imageUrl: string) => void
   onClose: () => void
   initialImage?: string | null
+  noteId: string
+  ownerId: string
 }
 
 const COLORS = [
@@ -21,7 +22,7 @@ const COLORS = [
   '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280',
 ]
 
-export default function DrawingCanvas({ onSave, onClose, initialImage }: DrawingCanvasProps) {
+export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, ownerId }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen')
   const [color, setColor] = useState('#000000')
@@ -203,32 +204,28 @@ export default function DrawingCanvas({ onSave, onClose, initialImage }: Drawing
         return
       }
 
-      // Upload to Supabase Storage
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      // Upload via our server-side API route which handles storage RLS
+      // and stores the file under the note owner's folder.
+      const file = new File([blob], `drawing_${Date.now()}.png`, { type: 'image/png' })
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('noteId', noteId)
+      formData.append('ownerId', ownerId)
+
+      const response = await fetch('/api/upload-note-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.url) {
+        console.error('Upload error:', result.error)
         setUploading(false)
         return
       }
 
-      const fileName = `drawing_${Date.now()}.png`
-      const filePath = `${user.id}/${fileName}`
-
-      const { error } = await supabase.storage
-        .from('note-images')
-        .upload(filePath, blob, { cacheControl: '3600', upsert: false, contentType: 'image/png' })
-
-      if (error) {
-        console.error('Upload error:', error)
-        setUploading(false)
-        return
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('note-images')
-        .getPublicUrl(filePath)
-
-      onSave(urlData.publicUrl)
+      onSave(result.url)
     } catch (err) {
       console.error('Drawing save error:', err)
     } finally {

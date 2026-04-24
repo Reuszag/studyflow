@@ -21,7 +21,7 @@
   --sidebar-bg: #0a0c12;
   --sidebar-hover: rgba(255, 255, 255, 0.05);
   --sidebar-toggle-bg: #1e2030;
-  --header-bg: rgba(15, 17, 23, 0.8);
+  --header-bg: rgb(15, 17, 23);
   --header-border: rgba(255, 255, 255, 0.05);
   --dropdown-bg: #1e2030;
   --dropdown-border: rgba(255, 255, 255, 0.1);
@@ -70,7 +70,7 @@
   --sidebar-bg: #d2d6e2;
   --sidebar-hover: rgba(0, 0, 0, 0.07);
   --sidebar-toggle-bg: #c0c4d2;
-  --header-bg: rgba(210, 214, 226, 0.92);
+  --header-bg: rgb(210, 214, 226);
   --header-border: rgba(0, 0, 0, 0.12);
   --dropdown-bg: #d8dce8;
   --dropdown-border: rgba(0, 0, 0, 0.18);
@@ -113,13 +113,18 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Hide native number input spinners */
+input[type=number].no-spinner::-webkit-inner-spin-button,
+input[type=number].no-spinner::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number].no-spinner { -moz-appearance: textfield; }
+
 /* ─── Tiptap Editor Styles ─── */
 .tiptap-editor .tiptap {
   outline: none;
   min-height: 500px;
   padding: 1.5rem 2rem;
   color: var(--body-text);
-  caret-color: var(--accent);
+  caret-color: #a78bfa;
 }
 
 .tiptap-editor .tiptap p.is-editor-empty:first-child::before {
@@ -157,6 +162,10 @@ body {
 .tiptap-editor .tiptap p {
   margin: 0.5rem 0;
   line-height: 1.7;
+}
+
+.tiptap-editor .tiptap p:has(> br:only-child) {
+  font-size: var(--editor-cursor-size, 16px);
 }
 
 .tiptap-editor .tiptap ul,
@@ -257,38 +266,53 @@ body {
   outline-offset: 2px;
 }
 
-/* Tables — Notion-style */
+/* Tables */
+.tiptap-editor .tiptap .tableWrapper {
+  margin: 1.25rem 0 3rem 140px;
+  padding-right: 200px;
+  width: max-content;
+  min-width: 0;
+  max-width: none;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
 .tiptap-editor .tiptap table {
   border-collapse: collapse;
-  width: 100%;
-  margin: 1rem 0;
+  table-layout: fixed;
+  width: max-content;
+  min-width: 0;
+  margin: 0;
 }
 
 .tiptap-editor .tiptap th,
 .tiptap-editor .tiptap td {
   border: 1px solid var(--card-border);
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.85rem;
   text-align: left;
   vertical-align: top;
-  min-width: 80px;
+  min-width: 120px;
+  max-width: 0;
+  overflow: hidden;
   position: relative;
   font-size: 0.875rem;
+  transition: background 0.1s;
 }
 
-.light .tiptap-editor .tiptap th,
-.light .tiptap-editor .tiptap td {
-  border: 1px solid #d1d5db;
+.tiptap-editor .tiptap td p,
+.tiptap-editor .tiptap th p {
+  margin: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .tiptap-editor .tiptap th {
   background: transparent;
-  font-weight: 500;
-  color: var(--muted-text);
-  font-size: 0.8rem;
-}
-
-.light .tiptap-editor .tiptap th {
-  background: #f9fafb;
+  font-weight: 400;
+  color: var(--body-text);
+  font-size: 0.875rem;
 }
 
 .tiptap-editor .tiptap td {
@@ -296,8 +320,12 @@ body {
   color: var(--body-text);
 }
 
+.tiptap-editor .tiptap tr:hover td {
+  background: var(--overlay-soft);
+}
+
 .tiptap-editor .tiptap .selectedCell {
-  background: rgba(124, 58, 237, 0.1);
+  background: rgba(124, 58, 237, 0.12) !important;
 }
 
 /* Table resize handle */
@@ -306,14 +334,11 @@ body {
   right: -2px;
   top: 0;
   bottom: -2px;
-  width: 4px;
+  width: 3px;
   background: var(--accent);
+  opacity: 0.6;
   cursor: col-resize;
-}
-
-.tiptap-editor .tiptap .tableWrapper {
-  overflow-x: auto;
-  margin: 1rem 0;
+  border-radius: 2px;
 }
 
 /* Mark / Highlight */

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { shareNote, removeShare, getNoteShares, updateSharePermission } from '../actions'
+import { createClient } from '@/lib/supabase/client'
 
 interface Share {
     id: string
@@ -10,7 +11,11 @@ interface Share {
     profiles: { email: string | null; full_name: string | null } | null
 }
 
-export default function ShareDialog({ noteId, onClose }: { noteId: string; onClose: () => void }) {
+export default function ShareDialog({ noteId, onClose, onPermissionChanged }: {
+    noteId: string
+    onClose: () => void
+    onPermissionChanged?: (change: { targetUserId: string; targetEmail: string | null; newPermission: 'view' | 'edit' }) => void
+}) {
     const [email, setEmail] = useState('')
     const [permission, setPermission] = useState<'view' | 'edit'>('edit')
     const [shares, setShares] = useState<Share[]>([])
@@ -18,10 +23,7 @@ export default function ShareDialog({ noteId, onClose }: { noteId: string; onClo
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [updatingId, setUpdatingId] = useState<string | null>(null)
-
-    useEffect(() => {
-        loadShares()
-    }, [])
+    const [removeSuccess, setRemoveSuccess] = useState('')
 
     async function loadShares() {
         const result = await getNoteShares(noteId)
@@ -29,6 +31,10 @@ export default function ShareDialog({ noteId, onClose }: { noteId: string; onClo
             setShares(result.shares as unknown as Share[])
         }
     }
+
+    useEffect(() => {
+        loadShares()
+    }, [])
 
     async function handleShare(e: React.FormEvent) {
         e.preventDefault()
@@ -48,10 +54,10 @@ export default function ShareDialog({ noteId, onClose }: { noteId: string; onClo
         setLoading(false)
     }
 
-    async function handleRemoveShare(shareId: string) {
-        if (!confirm('Remove this user\'s access to this note?')) return
+    async function handleRemoveShare(shareId: string, userEmail: string) {
         await removeShare(shareId, noteId)
         setShares((prev) => prev.filter((s) => s.id !== shareId))
+        setRemoveSuccess(`Access removed for ${userEmail}`)
     }
 
     async function handlePermissionChange(shareId: string, newPermission: 'view' | 'edit') {
@@ -64,6 +70,30 @@ export default function ShareDialog({ noteId, onClose }: { noteId: string; onClo
             setShares((prev) =>
                 prev.map((s) => s.id === shareId ? { ...s, permission: newPermission } : s)
             )
+            // Broadcast permission change instantly via Realtime so the affected
+            // user doesn't have to wait for the 5s polling interval to detect it.
+            const targetShare = shares.find(s => s.id === shareId)
+            if (targetShare) {
+                onPermissionChanged?.({
+                    targetUserId: targetShare.shared_with,
+                    targetEmail: targetShare.profiles?.email || null,
+                    newPermission,
+                })
+
+                const supabase = createClient()
+                const channel = supabase.channel(`note-presence-${noteId}`)
+                await channel.subscribe()
+                await channel.send({
+                    type: 'broadcast',
+                    event: 'permission-changed',
+                    payload: {
+                        targetUserId: targetShare.shared_with,
+                        targetEmail: targetShare.profiles?.email || null,
+                        newPermission,
+                    },
+                })
+                supabase.removeChannel(channel)
+            }
         }
         setUpdatingId(null)
     }
@@ -126,6 +156,7 @@ export default function ShareDialog({ noteId, onClose }: { noteId: string; onClo
 
                     {error && <p className="text-red-400 text-sm">{error}</p>}
                     {success && <p className="text-green-400 text-sm">{success}</p>}
+                    {removeSuccess && <p className="text-orange-400 text-sm">{removeSuccess}</p>}
                 </form>
 
                 {/* Current shares */}
@@ -164,7 +195,7 @@ export default function ShareDialog({ noteId, onClose }: { noteId: string; onClo
                                         </select>
                                         {/* Revoke access button */}
                                         <button
-                                            onClick={() => handleRemoveShare(share.id)}
+                                            onClick={() => handleRemoveShare(share.id, share.profiles?.email || 'Unknown user')}
                                             className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-500/20 transition-colors cursor-pointer"
                                             style={{ color: 'var(--muted-text)' }}
                                             title="Revoke access"

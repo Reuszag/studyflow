@@ -81,7 +81,7 @@ export default function LoginPage() {
                     className="text-3xl font-bold text-center mb-1"
                     style={{ color: 'var(--foreground)' }}
                 >
-                    📚 StudyFlow
+                    StudyFlow
                 </h1>
                 <p className="text-center mb-8" style={{ color: 'var(--muted-text)' }}>
                     Sign in to your account

@@ -24,9 +24,17 @@ export default async function DashboardLayout({
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('timezone, avatar_url, full_name')
+        .select('timezone, avatar_url, full_name, email')
         .eq('id', user.id)
         .single()
+
+    // Backfill email into profiles if missing (handle_new_user trigger doesn't store it)
+    if (profile && !profile.email && user.email) {
+        await supabase
+            .from('profiles')
+            .update({ email: user.email })
+            .eq('id', user.id)
+    }
 
     const userTimezone = profile?.timezone || 'UTC'
     const avatarUrl = profile?.avatar_url || null
@@ -40,16 +48,21 @@ export default async function DashboardLayout({
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Top bar */}
                 <header
-                    className="h-14 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10 transition-colors duration-300"
+                    className="h-14 flex items-center justify-between px-6 sticky top-0 z-[100000] transition-colors duration-300 relative"
                     style={{
                         background: 'var(--header-bg)',
                         borderBottom: '1px solid var(--header-border)',
                     }}
                 >
                     <div className="flex items-center gap-3">
-                        <span className="font-semibold text-sm" style={{ color: 'var(--body-text)' }}>📚 StudyFlow</span>
+                        {/* Left side empty or reserved */}
+                    </div>
+
+                    {/* Centered Clock */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                         <LiveClock timezone={userTimezone} />
                     </div>
+
                     <div className="flex items-center gap-3">
                         <ThemeToggle />
                         <ProfileDropdown avatarUrl={avatarUrl} fullName={fullName} />

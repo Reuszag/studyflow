@@ -58,7 +58,7 @@ export default function ProfileDropdown({ avatarUrl, fullName }: ProfileDropdown
                         className="flex items-center gap-2 px-4 py-2 text-sm transition-colors"
                         style={{ color: 'var(--subtle-text)' }}
                     >
-                        <span>👤</span> Profile Settings
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M3 21a9 9 0 0 1 18 0"/></svg> Profile Settings
                     </Link>
                     
                     <div className="h-px my-1" style={{ background: 'var(--dropdown-border)' }}></div>
@@ -70,7 +70,7 @@ export default function ProfileDropdown({ avatarUrl, fullName }: ProfileDropdown
                         }}
                         className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                     >
-                        <span>🚪</span> Sign Out
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign Out
                     </button>
                 </div>
             )}

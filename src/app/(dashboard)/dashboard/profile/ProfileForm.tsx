@@ -278,8 +278,10 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         {avatarUrl ? (
                             <img src={avatarUrl} alt="Profile avatar" className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-3xl">
-                                👤
+                            <div className="w-full h-full flex items-center justify-center" style={{ color: 'var(--muted-text)' }}>
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                </svg>
                             </div>
                         )}
                     </div>
@@ -303,18 +305,20 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                                         setShowAvatarMenu(false)
                                         fileInputRef.current?.click()
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm transition"
+                                    className="w-full text-left px-4 py-2 text-sm transition flex items-center gap-2"
                                     style={{ color: 'var(--text-secondary)' }}
                                 >
-                                    📷 Upload New Picture
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                    Upload New Picture
                                 </button>
                                 {avatarUrl && (
                                     <button
                                         type="button"
                                         onClick={handleDeleteAvatar}
-                                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition"
+                                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
                                     >
-                                        🗑️ Remove Picture
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                        Remove Picture
                                     </button>
                                 )}
                             </div>
@@ -382,7 +386,10 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors"
                         style={{ background: 'var(--overlay-soft)', color: 'var(--text-secondary)' }}
                     >
-                        <span className="flex items-center gap-2">🔒 Change Password</span>
+                        <span className="flex items-center gap-2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                            Change Password
+                        </span>
                         <span className="text-xs" style={{ color: 'var(--text-quaternary)', transform: showPasswordSection ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.2s' }}>▼</span>
                     </button>
 
@@ -451,8 +458,8 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                                 )}
                             </div>
 
-                            {pwError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">❌ {pwError}</p>}
-                            {pwMessage && <p className="text-green-400 text-xs bg-green-500/10 border border-green-500/20 px-3 py-2 rounded-lg">✅ {pwMessage}</p>}
+                            {pwError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">{pwError}</p>}
+                            {pwMessage && <p className="text-green-400 text-xs bg-green-500/10 border border-green-500/20 px-3 py-2 rounded-lg">{pwMessage}</p>}
 
                             <button
                                 type="button"
@@ -469,12 +476,12 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                 {/* Messages */}
                 {message && (
                     <p className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 px-4 py-2.5 rounded-xl">
-                        ✅ {message}
+                        {message}
                     </p>
                 )}
                 {error && (
                     <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">
-                        ❌ {error}
+                        {error}
                     </p>
                 )}
 

@@ -106,7 +106,11 @@ export default function RegisterPage() {
                         border: '1px solid var(--card-border)',
                     }}
                 >
-                    <div className="text-5xl mb-4">📧</div>
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'var(--overlay-soft)', border: '1px solid var(--card-border)' }}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)' }}>
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </div>
                     <h2
                         className="text-2xl font-bold mb-2"
                         style={{ color: 'var(--foreground)' }}
@@ -162,7 +166,7 @@ export default function RegisterPage() {
                     className="text-3xl font-bold text-center mb-1"
                     style={{ color: 'var(--foreground)' }}
                 >
-                    📚 StudyFlow
+                    StudyFlow
                 </h1>
                 <p className="text-center mb-8" style={{ color: 'var(--muted-text)' }}>
                     Create your account

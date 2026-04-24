@@ -3,6 +3,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+function decodeStoragePath(rawPath: string): string {
+    let normalized = rawPath
+    for (let i = 0; i < 3; i++) {
+        try {
+            const decoded = decodeURIComponent(normalized)
+            if (decoded === normalized) break
+            normalized = decoded
+        } catch {
+            break
+        }
+    }
+    return normalized.replace(/^\/+/, '').replace(/\\/g, '/')
+}
+
 export async function createNote() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -80,7 +94,7 @@ function normalizeImageUrls(content: object): object {
                 if (src.startsWith(signedPrefix)) {
                     // Extract storage path from signed URL (remove query params)
                     const withoutPrefix = src.slice(signedPrefix.length)
-                    const storagePath = withoutPrefix.split('?')[0]
+                    const storagePath = decodeStoragePath(withoutPrefix.split('?')[0])
                     node.attrs.src = publicPrefix + storagePath
                 } else if (src.startsWith(proxyPrefix)) {
                     // Extract storage path from proxy URL
@@ -88,7 +102,7 @@ function normalizeImageUrls(content: object): object {
                         const params = new URLSearchParams(src.slice(proxyPrefix.length))
                         const storagePath = params.get('path')
                         if (storagePath) {
-                            node.attrs.src = publicPrefix + storagePath
+                            node.attrs.src = publicPrefix + decodeStoragePath(storagePath)
                         }
                     } catch {
                         // Keep original if parsing fails
@@ -197,12 +211,12 @@ function imageUrlsToPaths(urls: string[]): string[] {
 
     for (const url of urls) {
         if (url.startsWith(publicPrefix)) {
-            paths.push(decodeURIComponent(url.slice(publicPrefix.length).split('?')[0]))
+            paths.push(decodeStoragePath(url.slice(publicPrefix.length).split('?')[0]))
         } else if (url.startsWith(proxyPrefix)) {
             try {
                 const params = new URLSearchParams(url.slice(proxyPrefix.length))
                 const path = params.get('path')
-                if (path) paths.push(path)
+                if (path) paths.push(decodeStoragePath(path))
             } catch { /* skip */ }
         }
     }
@@ -405,6 +419,7 @@ function resolveImageUrls(
 ): Record<string, unknown> {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
     const publicPrefix = `${supabaseUrl}/storage/v1/object/public/note-images/`
+    const proxyPrefix = '/api/note-image?'
 
     type ContentNode = { type?: string; attrs?: Record<string, unknown>; content?: ContentNode[] }
 
@@ -414,9 +429,20 @@ function resolveImageUrls(
             if (node.type === 'image' && typeof node.attrs?.src === 'string') {
                 const src = node.attrs.src as string
                 if (src.startsWith(publicPrefix)) {
-                    const storagePath = src.slice(publicPrefix.length)
+                    const storagePath = decodeStoragePath(src.slice(publicPrefix.length))
                     // Replace with proxy URL that handles auth and access control
                     node.attrs.src = `/api/note-image?path=${encodeURIComponent(storagePath)}&noteId=${noteId}`
+                } else if (src.startsWith(proxyPrefix)) {
+                    // Re-canonicalize existing proxy URLs to avoid encoded-path drift.
+                    try {
+                        const params = new URLSearchParams(src.slice(proxyPrefix.length))
+                        const storagePath = params.get('path')
+                        if (storagePath) {
+                            node.attrs.src = `/api/note-image?path=${encodeURIComponent(decodeStoragePath(storagePath))}&noteId=${noteId}`
+                        }
+                    } catch {
+                        // Keep original if parsing fails
+                    }
                 }
             }
             if (node.content) walk(node.content)
@@ -443,7 +469,10 @@ export async function getNote(noteId: string) {
         .single()
 
     if (error || !note) {
-        console.error('Error fetching note:', error)
+        // PGRST116 = no rows found (deleted note, access denied) — not a real error
+        if (error && (error as { code?: string }).code !== 'PGRST116') {
+            console.error('Error fetching note:', error)
+        }
         return { error: 'Note not found or access denied', note: null }
     }
 
@@ -459,11 +488,11 @@ export async function getNote(noteId: string) {
     }
     note.profiles = profiles
 
-    // For shared users (non-owners), rewrite public storage URLs to proxy URLs
-    // so the server handles authentication and signed URL generation.
-    // The note-images bucket may have RLS policies that block direct access
-    // for users who didn't upload the file.
-    if (note.owner_id !== user.id && note.content) {
+    // Rewrite public storage URLs to proxy URLs for ALL users (including the owner).
+    // Storage RLS on the note-images bucket may block direct public access for files
+    // uploaded by a different user. Routing everything through the proxy ensures
+    // both the owner and shared users can see images uploaded by anyone.
+    if (note.content) {
         note.content = resolveImageUrls(
             note.content as Record<string, unknown>,
             noteId
