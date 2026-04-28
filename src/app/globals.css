@@ -52,28 +52,28 @@
 
 /* ─── Light theme ─── */
 .light {
-  --background: #c5c9d8;
-  --background-deep: #bcc0d1;
+  --background: #eef0f8;
+  --background-deep: #e4e7f3;
   --foreground: #1a1a2e;
-  --card-bg: #dfe2ec;
-  --card-bg-alt: #d5d9e5;
-  --card-border: rgba(0, 0, 0, 0.15);
-  --card-border-hover: rgba(0, 0, 0, 0.25);
-  --input-bg: #ced2de;
-  --input-border: #9ca3af;
+  --card-bg: #ffffff;
+  --card-bg-alt: #f8f9ff;
+  --card-border: rgba(0, 0, 0, 0.10);
+  --card-border-hover: rgba(0, 0, 0, 0.20);
+  --input-bg: #f5f6fb;
+  --input-border: #c9cde0;
   --input-text: #1a1a2e;
-  --label-text: #3b4252;
-  --muted-text: #5a6170;
+  --label-text: #374151;
+  --muted-text: #6b7280;
   --heading-text: #111827;
-  --body-text: #2d3340;
-  --subtle-text: #5a6170;
-  --sidebar-bg: #d2d6e2;
+  --body-text: #1f2937;
+  --subtle-text: #6b7280;
+  --sidebar-bg: #e4e7f3;
   --sidebar-hover: rgba(0, 0, 0, 0.07);
-  --sidebar-toggle-bg: #c0c4d2;
-  --header-bg: rgb(210, 214, 226);
-  --header-border: rgba(0, 0, 0, 0.12);
-  --dropdown-bg: #d8dce8;
-  --dropdown-border: rgba(0, 0, 0, 0.18);
+  --sidebar-toggle-bg: #d8dce8;
+  --header-bg: rgb(228, 231, 243);
+  --header-border: rgba(0, 0, 0, 0.10);
+  --dropdown-bg: #f5f6fb;
+  --dropdown-border: rgba(0, 0, 0, 0.12);
   --hover-overlay: rgba(0, 0, 0, 0.05);
   --accent: #7c3aed;
   --accent-hover: #6d28d9;
@@ -81,19 +81,19 @@
   --glow-opacity: 0.3;
 
   /* ─── Light-mode semantic tokens (overlay / glass / interactive) ─── */
-  --overlay-soft: rgba(0, 0, 0, 0.05);
-  --overlay-medium: rgba(0, 0, 0, 0.12);
-  --overlay-strong: rgba(0, 0, 0, 0.16);
-  --ring-track: rgba(0, 0, 0, 0.10);
-  --pill-bg: rgba(0, 0, 0, 0.06);
-  --pill-border: rgba(0, 0, 0, 0.15);
-  --glass-bg: rgba(210, 214, 226, 0.85);
+  --overlay-soft: rgba(0, 0, 0, 0.04);
+  --overlay-medium: rgba(0, 0, 0, 0.08);
+  --overlay-strong: rgba(0, 0, 0, 0.13);
+  --ring-track: rgba(0, 0, 0, 0.08);
+  --pill-bg: rgba(0, 0, 0, 0.05);
+  --pill-border: rgba(0, 0, 0, 0.12);
+  --glass-bg: rgba(255, 255, 255, 0.85);
   --text-primary: #111827;
-  --text-secondary: #4b5563;
+  --text-secondary: #374151;
   --text-tertiary: #6b7280;
   --text-quaternary: #9ca3af;
-  --shadow-color: rgba(0, 0, 0, 0.10);
-  --dashed-border: #2b2e35;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --dashed-border: #a8afc7;
   --active-nav-bg: rgba(124, 58, 237, 0.10);
   --active-nav-text: #7c3aed;
   --active-nav-border: rgba(124, 58, 237, 0.30);

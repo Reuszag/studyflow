@@ -145,7 +145,7 @@ export default async function DashboardPage() {
                 ].map((stat, i) => (
                     <div
                         key={i}
-                        className="p-5 rounded-2xl border transition-all hover:border-violet-500/30 group"
+                        className="p-5 rounded-2xl border transition-all hover:border-violet-500/30"
                         style={{
                             background: 'var(--card-bg)',
                             borderColor: 'var(--card-border)',
@@ -158,9 +158,6 @@ export default async function DashboardPage() {
                             >
                                 <stat.icon />
                             </div>
-                            <span className="text-xs font-bold tracking-wider opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--muted-text)' }}>
-                                DETAILS
-                            </span>
                         </div>
                         <div className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--heading-text)' }}>{stat.value}</div>
                         <div className="text-xs font-medium uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>{stat.label}</div>
@@ -176,7 +173,6 @@ export default async function DashboardPage() {
                     <section>
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-lg font-bold tracking-tight" style={{ color: 'var(--heading-text)' }}>Modules</h2>
-                            <p className="text-xs font-bold tracking-widest uppercase cursor-pointer hover:text-violet-400 transition-colors" style={{ color: 'var(--muted-text)' }}>Configure</p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -282,8 +278,8 @@ export default async function DashboardPage() {
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.color}`} style={{ background: 'var(--hover-overlay)' }}>
                                         <item.icon />
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-semibold group-hover:text-violet-400 transition-colors" style={{ color: 'var(--heading-text)' }}>{item.title}</p>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold truncate group-hover:text-violet-400 transition-colors" style={{ color: 'var(--heading-text)' }}>{item.title}</p>
                                         <p className="text-[11px]" style={{ color: 'var(--muted-text)' }}>{item.time}</p>
                                     </div>
                                 </div>

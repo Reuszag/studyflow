@@ -63,39 +63,67 @@ export default function ShareDialog({ noteId, onClose, onPermissionChanged }: {
     async function handlePermissionChange(shareId: string, newPermission: 'view' | 'edit') {
         setUpdatingId(shareId)
         setError('')
-        const result = await updateSharePermission(shareId, newPermission, noteId)
-        if (result.error) {
-            setError(result.error)
-        } else {
+        try {
+            const result = await updateSharePermission(shareId, newPermission, noteId)
+            if (result.error) {
+                setError(result.error)
+                return
+            }
             setShares((prev) =>
                 prev.map((s) => s.id === shareId ? { ...s, permission: newPermission } : s)
             )
-            // Broadcast permission change instantly via Realtime so the affected
-            // user doesn't have to wait for the 5s polling interval to detect it.
             const targetShare = shares.find(s => s.id === shareId)
-            if (targetShare) {
-                onPermissionChanged?.({
-                    targetUserId: targetShare.shared_with,
-                    targetEmail: targetShare.profiles?.email || null,
-                    newPermission,
-                })
+            if (!targetShare) return
 
+            onPermissionChanged?.({
+                targetUserId: targetShare.shared_with,
+                targetEmail: targetShare.profiles?.email || null,
+                newPermission,
+            })
+
+            // Fire-and-forget broadcast.
+            // Reuse the existing NoteEditor channel for `note-permission-{noteId}` if it
+            // already exists in this tab — owner's NoteEditor subscribed to it on mount.
+            // Don't removeChannel afterward (would kill the listener and break subsequent
+            // permission updates from this dialog).
+            ;(async () => {
                 const supabase = createClient()
-                const channel = supabase.channel(`note-presence-${noteId}`)
-                await channel.subscribe()
-                await channel.send({
-                    type: 'broadcast',
-                    event: 'permission-changed',
-                    payload: {
-                        targetUserId: targetShare.shared_with,
-                        targetEmail: targetShare.profiles?.email || null,
-                        newPermission,
-                    },
-                })
-                supabase.removeChannel(channel)
-            }
+                const topic = `note-permission-${noteId}`
+                const existing = supabase.getChannels().find((c) => c.topic === `realtime:${topic}` || c.topic === topic)
+                let ch = existing
+                let createdLocally = false
+                if (!ch) {
+                    createdLocally = true
+                    ch = supabase.channel(topic, { config: { broadcast: { self: false, ack: false } } })
+                    let resolved = false
+                    await Promise.race([
+                        new Promise<void>((resolve) => {
+                            ch!.subscribe((status) => {
+                                if (status === 'SUBSCRIBED' && !resolved) {
+                                    resolved = true
+                                    resolve()
+                                }
+                            })
+                        }),
+                        new Promise<void>((resolve) => setTimeout(() => { resolved = true; resolve() }, 1500)),
+                    ])
+                }
+                try {
+                    await ch.send({
+                        type: 'broadcast',
+                        event: 'permission-changed',
+                        payload: {
+                            targetUserId: targetShare.shared_with,
+                            targetEmail: targetShare.profiles?.email || null,
+                            newPermission,
+                        },
+                    })
+                } catch { /* swallow */ }
+                if (createdLocally) supabase.removeChannel(ch)
+            })()
+        } finally {
+            setUpdatingId(null)
         }
-        setUpdatingId(null)
     }
 
     return (

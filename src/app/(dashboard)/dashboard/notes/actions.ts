@@ -382,10 +382,12 @@ export async function getNoteShares(noteId: string) {
         if (email) emailMap.set(share.shared_with, email)
     }
 
-    const enrichedShares = shares.map(s => ({
-        ...s,
-        profiles: { email: emailMap.get(s.shared_with) || null },
-    }))
+    const enrichedShares = shares
+        .filter(s => emailMap.has(s.shared_with))
+        .map(s => ({
+            ...s,
+            profiles: { email: emailMap.get(s.shared_with) || null },
+        }))
 
     return { shares: enrichedShares }
 }

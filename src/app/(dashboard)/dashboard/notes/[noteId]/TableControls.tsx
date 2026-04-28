@@ -259,6 +259,24 @@ export default function TableControls({
         document.body.style.cursor = 'grabbing'
         document.body.style.userSelect = 'none'
 
+        let lastUpdate = 0
+        function throttledUpdateAttrs(x: number, y: number) {
+            const now = Date.now()
+            if (now - lastUpdate < 100) return
+            lastUpdate = now
+
+            try {
+                const s = tablePmRef.current
+                if (!s || !editor) return
+                const node = editor.state.doc.nodeAt(s.pos)
+                if (!node || node.type.name !== 'table') return
+                const { tr } = editor.state
+                tr.setNodeMarkup(s.pos, undefined, { ...node.attrs, posX: Math.round(x), posY: Math.round(y) })
+                // Use addToHistory: false to avoid polluting undo/redo with every drag step
+                editor.view.dispatch(tr.setMeta('addToHistory', false))
+            } catch {}
+        }
+
         function onMove(ev: PointerEvent) {
             const dx = ev.clientX - mouseStartX
             const dy = ev.clientY - mouseStartY
@@ -282,13 +300,15 @@ export default function TableControls({
             wrapper.style.zIndex = '15'
 
             // Update move handle position (viewport coords)
-            // tRect.top is already viewport-relative (scroll-adjusted), so newY is offset within tiptap
             if (tRect) {
                 setTableMoveHandle({
                     top: tRect.top + newY - 22,
                     left: tRect.left + newX - 22,
                 })
             }
+
+            // Real-time update for view-only users
+            throttledUpdateAttrs(newX, newY)
         }
 
         function onUp(ev: PointerEvent) {
@@ -305,7 +325,7 @@ export default function TableControls({
             const finalX = parseFloat(wrapper.style.left) || startPosX
             const finalY = parseFloat(wrapper.style.top) || startPosY
 
-            // Persist into ProseMirror node attrs
+            // Final persist into ProseMirror node attrs (ensure history is captured for the final drop)
             try {
                 const s = tablePmRef.current
                 if (!s || !editor) return
@@ -382,42 +402,9 @@ export default function TableControls({
         setSelectedCols(new Set())
     }
 
-    // Sync PM table posX/posY attrs → tableWrapper DOM styles after every editor update
+    // Clean up controls if the tracked table is deleted
     useEffect(() => {
         if (!editor) return
-        function applyPositions() {
-            const tiptap = containerRef.current?.querySelector('.tiptap') as HTMLElement | null
-            if (!tiptap) return
-
-            // Collect PM table nodes in document order
-            const tableNodes: Array<{ posX: number | null; posY: number | null }> = []
-            editor!.state.doc.descendants((node: any) => {
-                if (node.type.name === 'table') {
-                    tableNodes.push({ posX: node.attrs?.posX ?? null, posY: node.attrs?.posY ?? null })
-                    return false // don't descend into table
-                }
-            })
-
-            // Match in DOM order
-            const wrappers = Array.from(tiptap.querySelectorAll('.tableWrapper')) as HTMLElement[]
-            wrappers.forEach((wrapper, i) => {
-                const attrs = tableNodes[i]
-                if (!attrs) return
-                if (attrs.posX != null && attrs.posY != null) {
-                    wrapper.style.position = 'absolute'
-                    wrapper.style.left = `${attrs.posX}px`
-                    wrapper.style.top = `${attrs.posY}px`
-                    wrapper.style.margin = '0'
-                    wrapper.style.zIndex = '10'
-                } else {
-                    wrapper.style.position = ''
-                    wrapper.style.left = ''
-                    wrapper.style.top = ''
-                    wrapper.style.margin = ''
-                    wrapper.style.zIndex = ''
-                }
-            })
-        }
         function checkTableGone() {
             // Check if any table node exists in the doc at all
             let hasTable = false
@@ -446,14 +433,11 @@ export default function TableControls({
             }
         }
 
-        applyPositions()
-        editor.on('update', applyPositions)
         editor.on('update', checkTableGone)
         return () => {
-            editor.off('update', applyPositions)
             editor.off('update', checkTableGone)
         }
-    }, [editor, containerRef, clearControls])
+    }, [editor, clearControls])
 
     // Document-level mouse tracking — catches mouse between table and controls panel
     useEffect(() => {

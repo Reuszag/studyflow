@@ -108,7 +108,7 @@ src/
 
 ## Routing Conventions
 
-- `(auth)` route group — unauthenticated pages (`/login`, `/register`)
+- `(auth)` route group — unauthenticated pages (`/login`, `/register`, `/forgot-password`, `/reset-password`)
 - `(dashboard)` route group — authenticated pages (`/dashboard`, `/dashboard/focus`, etc.)
 - Route groups use parentheses and **do not affect the URL path**
 - Dashboard layout (`(dashboard)/layout.tsx`) handles the auth redirect guard
@@ -124,7 +124,6 @@ NEXT_PUBLIC_SUPABASE_URL=          # Your Supabase project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Your Supabase anon/public key
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=    # Google reCAPTCHA v2 site key
 GEMINI_API_KEY=                    # Google Gemini API key (for AI document summarization)
-SUPABASE_SERVICE_ROLE_KEY=         # Supabase service role key (server-only, bypasses RLS for storage uploads)
 ```
 
 ### Getting a reCAPTCHA key
@@ -147,6 +146,7 @@ SUPABASE_SERVICE_ROLE_KEY=         # Supabase service role key (server-only, byp
 - Sign-in via `supabase.auth.signInWithPassword({ email, password })`
 - If email confirmation is **OFF** in Supabase dashboard → `data.session` is set immediately after sign-up → redirect to `/dashboard`
 - If email confirmation is **ON** → show "check your email" screen
+- Password reset via `supabase.auth.resetPasswordForEmail(email, { redirectTo: .../auth/callback?next=/reset-password })` → Supabase emails link with `?code=` → `/auth/callback` exchanges code for session via `exchangeCodeForSession(code)` → redirects to `/reset-password` → `PASSWORD_RECOVERY` event fires → `supabase.auth.updateUser({ password })` sets new password
 
 ### Server Actions
 Mutations for tasks, storage, and profile use Next.js Server Actions (`'use server'`) located at `actions.ts` files next to their page. They create a server Supabase client on each call.
@@ -280,6 +280,70 @@ npm start
 ```bash
 npm run lint
 ```
+
+### Run tests
+```bash
+npm test           # run all tests once
+npm run test:watch # watch mode
+```
+
+---
+
+## Testing
+
+### Setup
+- **Runner:** Vitest 4.x
+- **Component tests:** React Testing Library + jsdom
+- **Config:** `vitest.config.ts` at project root
+- **Setup file:** `src/tests/setup.ts` (imports `@testing-library/jest-dom`)
+
+### Test locations
+```
+src/tests/
+├── setup.ts
+├── backend/
+│   ├── unit.test.ts         # 44 pure function unit tests (white box)
+│   ├── integration.test.ts  # 75 server action tests (mocked Supabase)
+│   └── api.test.ts          # 31 API route tests (mocked Supabase + fetch)
+└── frontend/
+    ├── unit.test.ts         # 37 pure logic unit tests (white box)
+    └── component.test.tsx   # 27 component tests (RTL + jsdom)
+```
+
+### File naming conventions
+- `*.test.ts` — node environment (backend + frontend logic)
+- `*.test.tsx` — jsdom environment (React component tests via `// @vitest-environment jsdom`)
+
+### Test counts
+| File | Type | Count |
+|---|---|---|
+| `backend/unit.test.ts` | Unit (white box) | 44 |
+| `backend/integration.test.ts` | Integration (mocked Supabase) | 75 |
+| `backend/api.test.ts` | API route (mocked Supabase + fetch) | 31 |
+| `frontend/unit.test.ts` | Unit (white box) | 37 |
+| `frontend/component.test.tsx` | Component (RTL + jsdom) | 46 |
+| **Total** | | **233** |
+
+### Integration test Supabase mock pattern
+`createClient` is mocked via `vi.mock('@/lib/supabase/server')`. Each test rebuilds `mockSupabase` in `beforeEach` via `makeSupabase()`. When an action calls `.from('notes')` twice (e.g. `createNote` — first select, then insert), mock `.from` tracks call count to return different chain shapes per call. `NEXT_PUBLIC_SUPABASE_URL` is empty in test env so storage path prefixes are just the path portion (no hostname).
+
+### What is tested in unit tests
+**Backend (`backend/unit.test.ts`):**
+- `decodeStoragePath` — decode loop, leading slash strip, backslash conversion
+- `normalizeImageUrls` — proxy→public, signed→public, nested walk, no mutation
+- `resolveImageUrls` — public→proxy, re-canonicalization, no mutation
+- `extractImageUrls` — flat, nested, empty, mixed nodes
+- `imageUrlsToPaths` — public URL, proxy URL, unknown URL, query param strip
+- `getUniqueNoteTitle` — auto-naming, collision, gap-filling, case-insensitive
+
+**Frontend (`frontend/unit.test.ts`):**
+- `calcStats` — ECTS-weighted GPA, single subject, empty, credit weighting
+- `gpaColor` — all 4 color thresholds + null
+- `PASSWORD_RULES` — all 5 rules pass/fail, full valid password, empty string
+- `getStrengthMeta` — all 6 score levels
+- `advanceMode` — short/long break triggers, count tracking, `% 4` branch
+- `clampModeDuration` — min/max clamping for pomodoro and short break
+- `calcProgress` — full/half/zero/mid-session
 
 ---
 

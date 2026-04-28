@@ -219,8 +219,8 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
                 disabled={creating}
                 className="w-full rounded-2xl p-5 border-2 border-dashed transition-all duration-200 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-900/10 disabled:opacity-50 cursor-pointer"
                 style={{
-                    borderColor: 'var(--card-border)',
-                    color: 'var(--muted-text)',
+                    borderColor: 'var(--dashed-border)',
+                    color: 'var(--text-secondary)',
                 }}
             >
                 <div className="flex items-center justify-center gap-3">

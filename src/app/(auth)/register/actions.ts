@@ -33,6 +33,11 @@ export async function registerUser(email: string, password: string, captchaToken
         return { error: error.message }
     }
 
+    // Duplicate email: Supabase silently "succeeds" but returns no identities
+    if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+        return { error: 'An account with this email already exists. Please sign in instead.' }
+    }
+
     // If email confirmation is OFF → session exists immediately
     if (data.session) {
         // Ensure the profiles table has the email stored

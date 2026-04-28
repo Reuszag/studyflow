@@ -111,12 +111,21 @@ export default function LoginPage() {
                     </div>
 
                     <div>
-                        <label
-                            className="block text-sm font-medium mb-1"
-                            style={{ color: 'var(--label-text)' }}
-                        >
-                            Password
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                            <label
+                                className="block text-sm font-medium"
+                                style={{ color: 'var(--label-text)' }}
+                            >
+                                Password
+                            </label>
+                            <Link
+                                href="/forgot-password"
+                                className="text-xs font-medium hover:underline"
+                                style={{ color: 'var(--accent)' }}
+                            >
+                                Forgot password?
+                            </Link>
+                        </div>
                         <div className="relative">
                             <input
                                 type={showPassword ? 'text' : 'password'}

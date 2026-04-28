@@ -23,52 +23,43 @@ const COLORS = [
 ]
 
 export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, ownerId }: DrawingCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const mainCanvasRef = useRef<HTMLCanvasElement>(null)
+  const currentCanvasRef = useRef<HTMLCanvasElement>(null)
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen')
   const [color, setColor] = useState('#000000')
   const [brushSize, setBrushSize] = useState(3)
   const [isDrawing, setIsDrawing] = useState(false)
   const [strokes, setStrokes] = useState<Stroke[]>([])
-  const [currentStroke, setCurrentStroke] = useState<Stroke | null>(null)
   const [undoneStrokes, setUndoneStrokes] = useState<Stroke[]>([])
   const [uploading, setUploading] = useState(false)
+  const currentPointsRef = useRef<{ x: number; y: number }[]>([])
 
   const canvasWidth = 800
   const canvasHeight = 500
 
-  // Redraw the canvas from strokes
-  const redraw = useCallback((stks: Stroke[], current?: Stroke | null) => {
-    const canvas = canvasRef.current
+  // Redraw the main canvas (committed strokes)
+  const redrawMain = useCallback((stks: Stroke[]) => {
+    const canvas = mainCanvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
-
-    // Draw background
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-    // Draw initial image if exists
     if (initialImage) {
       const img = new window.Image()
+      img.crossOrigin = 'anonymous'
       img.src = initialImage
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight)
-        drawStrokes(ctx, stks)
-        if (current) drawStroke(ctx, current)
+        stks.forEach(s => drawStroke(ctx, s))
       }
     } else {
-      drawStrokes(ctx, stks)
-      if (current) drawStroke(ctx, current)
+      stks.forEach(s => drawStroke(ctx, s))
     }
   }, [initialImage])
-
-  function drawStrokes(ctx: CanvasRenderingContext2D, stks: Stroke[]) {
-    for (const stroke of stks) {
-      drawStroke(ctx, stroke)
-    }
-  }
 
   function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
     if (stroke.points.length < 2) return
@@ -94,31 +85,13 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
     ctx.restore()
   }
 
-  // Redraw on stroke changes
+  // Effect to redraw main canvas when strokes change
   useEffect(() => {
-    redraw(strokes)
-  }, [strokes, redraw])
-
-  // Load initial image
-  useEffect(() => {
-    if (initialImage) {
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      const img = new window.Image()
-      img.crossOrigin = 'anonymous'
-      img.src = initialImage
-      img.onload = () => {
-        ctx.fillStyle = '#ffffff'
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight)
-        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight)
-      }
-    }
-  }, [initialImage])
+    redrawMain(strokes)
+  }, [strokes, redrawMain])
 
   function getPos(e: React.MouseEvent<HTMLCanvasElement>) {
-    const rect = canvasRef.current!.getBoundingClientRect()
+    const rect = mainCanvasRef.current!.getBoundingClientRect()
     const scaleX = canvasWidth / rect.width
     const scaleY = canvasHeight / rect.height
     return {
@@ -130,31 +103,61 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
   function handleMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
     setIsDrawing(true)
     const pos = getPos(e)
-    const stroke: Stroke = { points: [pos], color, size: brushSize, tool }
-    setCurrentStroke(stroke)
+    currentPointsRef.current = [pos]
     setUndoneStrokes([])
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
-    if (!isDrawing || !currentStroke) return
+    if (!isDrawing) return
     const pos = getPos(e)
-    const updated = { ...currentStroke, points: [...currentStroke.points, pos] }
-    setCurrentStroke(updated)
+    const lastPos = currentPointsRef.current[currentPointsRef.current.length - 1]
+    currentPointsRef.current.push(pos)
 
-    // Draw current stroke in real time
-    const canvas = canvasRef.current
+    const canvas = currentCanvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    redraw(strokes, updated)
+
+    // Draw only the new segment on the temporary canvas
+    ctx.save()
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = brushSize
+
+    if (tool === 'eraser') {
+      ctx.strokeStyle = '#ffffff' // Visual placeholder for eraser
+    } else {
+      ctx.strokeStyle = color
+    }
+
+    ctx.beginPath()
+    ctx.moveTo(lastPos.x, lastPos.y)
+    ctx.lineTo(pos.x, pos.y)
+    ctx.stroke()
+    ctx.restore()
   }
 
   function handleMouseUp() {
-    if (currentStroke && currentStroke.points.length > 1) {
-      setStrokes(prev => [...prev, currentStroke])
-    }
-    setCurrentStroke(null)
+    if (!isDrawing) return
     setIsDrawing(false)
+    
+    if (currentPointsRef.current.length > 1) {
+      const newStroke: Stroke = {
+        points: [...currentPointsRef.current],
+        color,
+        size: brushSize,
+        tool
+      }
+      setStrokes(prev => [...prev, newStroke])
+    }
+    
+    // Clear temporary canvas
+    const canvas = currentCanvasRef.current
+    if (canvas) {
+      const ctx = canvas.getContext('2d')
+      ctx?.clearRect(0, 0, canvasWidth, canvasHeight)
+    }
+    currentPointsRef.current = []
   }
 
   function handleUndo() {
@@ -178,24 +181,17 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
   function handleClear() {
     setStrokes([])
     setUndoneStrokes([])
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight)
   }
 
   async function handleSaveDrawing() {
-    const canvas = canvasRef.current
+    const canvas = mainCanvasRef.current
     if (!canvas) return
 
     setUploading(true)
     try {
       // Redraw final state
-      redraw(strokes)
+      redrawMain(strokes)
 
-      // Convert to blob
       const blob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob(resolve, 'image/png')
       })
@@ -204,8 +200,6 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
         return
       }
 
-      // Upload via our server-side API route which handles storage RLS
-      // and stores the file under the note owner's folder.
       const file = new File([blob], `drawing_${Date.now()}.png`, { type: 'image/png' })
       const formData = new FormData()
       formData.append('file', file)
@@ -218,9 +212,7 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
       })
 
       const result = await response.json()
-
       if (!response.ok || !result.url) {
-        console.error('Upload error:', result.error)
         setUploading(false)
         return
       }
@@ -239,7 +231,6 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
         className="w-full max-w-[880px] rounded-2xl shadow-2xl overflow-hidden"
         style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--card-border)' }}>
           <h3 className="font-bold text-base" style={{ color: 'var(--heading-text)' }}>Drawing Canvas</h3>
           <div className="flex items-center gap-2">
@@ -261,77 +252,52 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
           </div>
         </div>
 
-        {/* Drawing toolbar */}
         <div className="drawing-toolbar">
-          {/* Pen */}
-          <button
-            className={tool === 'pen' ? 'active' : ''}
-            onClick={() => setTool('pen')}
-            title="Pen"
-          >
+          <button className={tool === 'pen' ? 'active' : ''} onClick={() => setTool('pen')} title="Pen">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
           </button>
-
-          {/* Eraser */}
-          <button
-            className={tool === 'eraser' ? 'active' : ''}
-            onClick={() => setTool('eraser')}
-            title="Eraser"
-          >
+          <button className={tool === 'eraser' ? 'active' : ''} onClick={() => setTool('eraser')} title="Eraser">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21.4 5.6c.8.8.8 2 0 2.8L10 20"/><path d="M6 12l6.4-6.4"/></svg>
           </button>
 
-          {/* Separator */}
           <div className="w-px h-5 mx-1" style={{ background: 'var(--card-border)' }} />
 
-          {/* Colors */}
           {COLORS.map(c => (
             <button
               key={c}
               onClick={() => { setColor(c); setTool('pen') }}
-              title={c}
               style={{
                 width: 22, height: 22, borderRadius: '50%', padding: 0,
                 background: c,
                 border: color === c && tool === 'pen' ? '2px solid var(--accent)' : c === '#ffffff' ? '1px solid var(--card-border)' : '2px solid transparent',
-                boxShadow: color === c && tool === 'pen' ? '0 0 0 2px var(--card-bg), 0 0 0 4px var(--accent)' : 'none',
               }}
             />
           ))}
 
           <div className="w-px h-5 mx-1" style={{ background: 'var(--card-border)' }} />
 
-          {/* Brush size */}
           <span className="text-[10px] font-medium" style={{ color: 'var(--muted-text)' }}>{brushSize}px</span>
-          <input
-            type="range"
-            min="1"
-            max="30"
-            value={brushSize}
-            onChange={e => setBrushSize(Number(e.target.value))}
-            className="brush-size-slider"
-          />
+          <input type="range" min="1" max="30" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} className="brush-size-slider" />
 
           <div className="w-px h-5 mx-1" style={{ background: 'var(--card-border)' }} />
 
-          {/* Undo */}
-          <button onClick={handleUndo} title="Undo" style={{ opacity: strokes.length === 0 ? 0.3 : 1 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/></svg>
-          </button>
-          {/* Redo */}
-          <button onClick={handleRedo} title="Redo" style={{ opacity: undoneStrokes.length === 0 ? 0.3 : 1 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-5.64-11.36L23 10"/></svg>
-          </button>
-          {/* Clear */}
-          <button onClick={handleClear} title="Clear canvas">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-          </button>
+          <button onClick={handleUndo} title="Undo" style={{ opacity: strokes.length === 0 ? 0.3 : 1 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/></svg></button>
+          <button onClick={handleRedo} title="Redo" style={{ opacity: undoneStrokes.length === 0 ? 0.3 : 1 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-5.64-11.36L23 10"/></svg></button>
+          <button onClick={handleClear} title="Clear"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
         </div>
 
-        {/* Canvas */}
-        <div className="flex items-center justify-center p-4" style={{ background: '#e5e7eb' }}>
+        <div className="flex items-center justify-center p-4 relative" style={{ background: '#e5e7eb' }}>
           <canvas
-            ref={canvasRef}
+            ref={mainCanvasRef}
+            width={canvasWidth}
+            height={canvasHeight}
+            style={{
+              width: '100%', maxWidth: `${canvasWidth}px`, height: 'auto',
+              borderRadius: '0.5rem', boxShadow: '0 2px 10px rgba(0,0,0,0.15)', background: '#fff',
+            }}
+          />
+          <canvas
+            ref={currentCanvasRef}
             width={canvasWidth}
             height={canvasHeight}
             onMouseDown={handleMouseDown}
@@ -339,13 +305,9 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             style={{
-              width: '100%',
-              maxWidth: `${canvasWidth}px`,
-              height: 'auto',
+              position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)',
+              width: 'calc(100% - 2rem)', maxWidth: `${canvasWidth}px`, height: 'auto',
               cursor: tool === 'eraser' ? 'cell' : 'crosshair',
-              borderRadius: '0.5rem',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
-              background: '#fff',
             }}
           />
         </div>

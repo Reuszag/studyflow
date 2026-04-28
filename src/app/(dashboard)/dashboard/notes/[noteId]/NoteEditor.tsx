@@ -72,18 +72,24 @@ const PositionableTable = Table.extend({
             posX: {
                 default: null,
                 parseHTML: el => {
-                    const v = el.closest('.tableWrapper')?.getAttribute('data-pos-x')
+                    const v = el.closest('.tableWrapper')?.getAttribute('data-pos-x') || el.getAttribute('data-pos-x')
                     return v != null ? Number(v) : null
                 },
-                renderHTML: () => ({}),
+                renderHTML: attributes => {
+                    if (attributes.posX == null) return {}
+                    return { 'data-pos-x': attributes.posX }
+                },
             },
             posY: {
                 default: null,
                 parseHTML: el => {
-                    const v = el.closest('.tableWrapper')?.getAttribute('data-pos-y')
+                    const v = el.closest('.tableWrapper')?.getAttribute('data-pos-y') || el.getAttribute('data-pos-y')
                     return v != null ? Number(v) : null
                 },
-                renderHTML: () => ({}),
+                renderHTML: attributes => {
+                    if (attributes.posY == null) return {}
+                    return { 'data-pos-y': attributes.posY }
+                },
             },
         }
     },
@@ -281,44 +287,62 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
         }
     }, [editor])
 
+    const applyTablePositions = useCallback(() => {
+        const tiptap = editorScrollRef.current?.querySelector('.tiptap') as HTMLElement | null
+        if (!tiptap || !editor || !editor.view) return false
+
+        // Ensure absolutely positioned table wrappers are anchored to the editor surface.
+        if (getComputedStyle(tiptap).position === 'static') {
+            tiptap.style.position = 'relative'
+        }
+
+        let foundAny = false
+        editor.state.doc.descendants((node, pos) => {
+            if (node.type.name === 'table') {
+                foundAny = true
+                try {
+                    const dom = editor.view.nodeDOM(pos)
+                    if (dom && dom instanceof HTMLElement) {
+                        const wrapper = (dom.closest('.tableWrapper') as HTMLElement) ?? dom
+                        const nodeAttrs = node.attrs as { posX?: number | null; posY?: number | null }
+                        const posX = nodeAttrs.posX
+                        const posY = nodeAttrs.posY
+
+                        if (posX != null && posY != null) {
+                            // Only update style if values actually changed to avoid layout thrashing
+                            const newLeft = `${posX}px`
+                            const newTop = `${posY}px`
+                            if (wrapper.style.left !== newLeft || wrapper.style.top !== newTop) {
+                                wrapper.style.position = 'absolute'
+                                wrapper.style.left = newLeft
+                                wrapper.style.top = newTop
+                                wrapper.style.margin = '0'
+                                wrapper.style.zIndex = '10'
+                            }
+                        } else if (wrapper.style.position === 'absolute') {
+                            wrapper.style.position = ''
+                            wrapper.style.left = ''
+                            wrapper.style.top = ''
+                            wrapper.style.margin = ''
+                            wrapper.style.zIndex = ''
+                        }
+                    }
+                } catch (e) {
+                    // Node might have been removed during iteration
+                }
+                return false // Don't descend into table
+            }
+            return true
+        })
+
+        return foundAny
+    }, [editor])
+
     // Apply table posX/posY attrs → DOM styles for ALL users (owner, editor, view-only).
     // TableControls only mounts when isEditable, so this handles view-only users too.
     useEffect(() => {
         if (!editor) return
-        function applyTablePositions() {
-            const tiptap = editorScrollRef.current?.querySelector('.tiptap') as HTMLElement | null
-            if (!tiptap) return false
-            // Ensure absolutely positioned table wrappers are anchored to the editor surface.
-            if (getComputedStyle(tiptap).position === 'static') {
-                tiptap.style.position = 'relative'
-            }
-            const tableNodes: Array<{ posX: number | null; posY: number | null }> = []
-            editor!.state.doc.descendants((node: { type: { name: string }; attrs?: Record<string, unknown> }) => {
-                if (node.type.name === 'table') {
-                    tableNodes.push({ posX: (node.attrs?.posX ?? null) as number | null, posY: (node.attrs?.posY ?? null) as number | null })
-                    return false
-                }
-            })
-            const wrappers = Array.from(tiptap.querySelectorAll('.tableWrapper')) as HTMLElement[]
-            wrappers.forEach((wrapper, i) => {
-                const attrs = tableNodes[i]
-                if (!attrs) return
-                if (attrs.posX != null && attrs.posY != null) {
-                    wrapper.style.position = 'absolute'
-                    wrapper.style.left = `${attrs.posX}px`
-                    wrapper.style.top = `${attrs.posY}px`
-                    wrapper.style.margin = '0'
-                    wrapper.style.zIndex = '10'
-                } else {
-                    wrapper.style.position = ''
-                    wrapper.style.left = ''
-                    wrapper.style.top = ''
-                    wrapper.style.margin = ''
-                    wrapper.style.zIndex = ''
-                }
-            })
-            return wrappers.length > 0
-        }
+
         // Run across multiple frames so first-load refresh reliably catches table wrappers.
         let rafId = 0
         let tries = 0
@@ -330,14 +354,30 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
             }
         }
         applyUntilReady()
-        editor.on('update', applyTablePositions)
-        editor.on('transaction', applyTablePositions)
+
+        let updateRafId = 0
+        const handleUpdateEvent = () => {
+            cancelAnimationFrame(updateRafId)
+            updateRafId = requestAnimationFrame(() => {
+                applyTablePositions()
+            })
+        }
+        const handleTransaction = () => {
+            cancelAnimationFrame(updateRafId)
+            updateRafId = requestAnimationFrame(() => {
+                applyTablePositions()
+            })
+        }
+
+        editor.on('update', handleUpdateEvent)
+        editor.on('transaction', handleTransaction)
         return () => {
             cancelAnimationFrame(rafId)
-            editor.off('update', applyTablePositions)
-            editor.off('transaction', applyTablePositions)
+            cancelAnimationFrame(updateRafId)
+            editor.off('update', handleUpdateEvent)
+            editor.off('transaction', handleTransaction)
         }
-    }, [editor])
+    }, [editor, applyTablePositions])
 
     const save = useCallback(async () => {
         if (!editor || !isEditable || duplicateWarning) return
@@ -476,15 +516,16 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
         channelRef.current = channel
 
         // Helper: check if someone else is already editing in current presence state.
-        // Identity is by session_id (per-tab) not user_id, so another tab of the
-        // same user also counts as "another editor" and goes through the tiebreaker.
-        function getActiveEditor(state: Record<string, unknown[]>): { email: string; sessionId: string } | null {
+        // Returns isSelf=true when the active editor is a stale presence from a previous
+        // session of the SAME user (e.g. after a page reload — the old WebSocket hasn't
+        // dropped yet). isSelf presences should not block the user from claiming the lock.
+        function getActiveEditor(state: Record<string, unknown[]>): { email: string; sessionId: string; isSelf: boolean } | null {
             for (const key of Object.keys(state)) {
                 for (const presence of state[key]) {
                     const p = presence as unknown as { user_id: string; email?: string; isEditing?: boolean; session_id?: string }
                     const pSid = p.session_id || p.user_id
                     if (pSid === sessionIdRef.current) continue
-                    if (p.isEditing) return { email: p.email || 'Another user', sessionId: pSid }
+                    if (p.isEditing) return { email: p.email || 'Another user', sessionId: pSid, isSelf: p.user_id === currentUserId }
                 }
             }
             return null
@@ -498,8 +539,8 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                 for (const key of Object.keys(state)) {
                     for (const presence of state[key]) {
                         const p = presence as unknown as { user_id: string; email?: string; isEditing?: boolean; session_id?: string }
-                        const pSid = p.session_id || p.user_id
-                        if (pSid === sessionIdRef.current) continue
+                        // Skip self by user_id so ghost presences (after reload) never list our own email
+                        if (p.user_id === currentUserId) continue
                         // Only list users who are NOT editing as "viewers"
                         if (!p.isEditing) {
                             viewers.push(p.email || 'Another user')
@@ -515,15 +556,18 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                     activeEditorRef.current = activeEditorEmail
                     requestedInitialSyncRef.current = false
                 }
-                someoneElseEditingRef.current = !!activeEditor
+                // Stale self-presence (same user_id, old session from reload) must not count
+                // as "someone else editing" — it's a ghost that will expire on its own.
+                someoneElseEditingRef.current = !!activeEditor && !activeEditor.isSelf
 
-                // First sync after subscribe: claim edit lock ONLY if no active editor.
+                // First sync after subscribe: claim edit lock if no active editor OR if
+                // the only active editor is a stale presence from our own previous session.
                 // Deferring to sync (instead of claiming in SUBSCRIBED) ensures presence
                 // state is fully populated, so reloaders never claim while another user
                 // is editing.
                 if (!initialSyncDoneRef.current) {
                     initialSyncDoneRef.current = true
-                    if (!activeEditor && hasEditPermissionRef.current && !myEditingRef.current) {
+                    if ((!activeEditor || activeEditor.isSelf) && hasEditPermissionRef.current && !myEditingRef.current) {
                         myEditingRef.current = true
                         channel.track({
                             user_id: currentUserId,
@@ -565,13 +609,12 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                     })
                 }
 
-                if (activeEditor) {
-                    // Any active editor means the previous handoff banner is stale.
+                if (activeEditor && !activeEditor.isSelf) {
+                    // A genuinely different user holds the lock — update all users who need to know.
                     setEditorLeft(false)
                     setShowReloadPrompt(false)
                     setPendingSaveConfirmation(false)
 
-                    // Someone else holds the lock — update all users who need to know
                     if (!myEditingRef.current) {
                         lockedByUserRef.current = activeEditor.email
                         setLockedByUser(activeEditor.email)
@@ -636,17 +679,18 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                     // Rewrite any public storage URLs to proxy URLs so this viewer
                     // can load images uploaded by anyone (owner or other shared users).
                     const rewritten = rewriteContentImageUrls(content, note.id)
-                    editor.commands.setContent(rewritten, { emitUpdate: false })
+                    editor.commands.setContent(rewritten, { emitUpdate: true })
                     // Keep latest snapshot aligned for lock-claim and safety checks.
                     latestContentRef.current = rewritten
+                    // Force position sync immediately after content update
+                    requestAnimationFrame(() => applyTablePositions())
                 }
                 if (remoteTitle) {
                     setTitle(remoteTitle)
                 }
             })
-            // Listen for instant permission-change broadcasts from the ShareDialog.
-            // This eliminates the 5s polling delay — the affected user immediately
-            // saves and releases the edit lock before the owner can refresh.
+            // Legacy listener kept for safety; primary path is the dedicated
+            // note-permission-{noteId} channel below to avoid disturbing presence.
             .on('broadcast', { event: 'permission-changed' }, async ({ payload }) => {
                 const { targetUserId, targetEmail, newPermission } = payload as { targetUserId: string; targetEmail: string | null; newPermission: 'view' | 'edit' }
 
@@ -668,28 +712,30 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
 
                 if (newCanEdit) {
                     setPermissionNotice('upgraded')
-                    if (someoneElseEditingRef.current) {
-                        // Someone else is editing — show the lock banner so user knows to wait
-                        const state = channel.presenceState()
-                        for (const key of Object.keys(state)) {
-                            for (const p of state[key]) {
-                                const presence = p as unknown as { user_id: string; email?: string; isEditing?: boolean }
-                                if (presence.user_id !== currentUserId && presence.isEditing) {
-                                    lockedByUserRef.current = presence.email || 'Another user'
-                                    setLockedByUser(presence.email || 'Another user')
-                                }
+                    // Re-check presence inline — someoneElseEditingRef may be stale at broadcast time.
+                    const state = channel.presenceState()
+                    let activeOtherEditor: { email: string } | null = null
+                    for (const key of Object.keys(state)) {
+                        for (const p of state[key]) {
+                            const presence = p as unknown as { user_id: string; email?: string; isEditing?: boolean }
+                            if (presence.user_id !== currentUserId && presence.isEditing) {
+                                activeOtherEditor = { email: presence.email || 'Another user' }
                             }
                         }
+                    }
+                    if (activeOtherEditor) {
+                        // Owner (or another user) still editing — show lock banner. Don't show "editor left".
+                        lockedByUserRef.current = activeOtherEditor.email
+                        setLockedByUser(activeOtherEditor.email)
+                        setEditorLeft(false)
+                        setPendingSaveConfirmation(false)
                     } else {
-                        // If no one is editing, show the same green handoff/reload banner
-                        // that appears after an editor leaves.
+                        // No one editing — show ready-to-edit handoff banner.
                         lockedByUserRef.current = null
                         setLockedByUser(null)
                         setEditorLeft(true)
                         setPendingSaveConfirmation(false)
                     }
-                    // No else needed: if no one is editing, user can reload to claim the lock.
-                    // The upgraded banner already prompts them; claimEditLock handles in-place claim.
                 } else {
                     setPermissionNotice('downgraded')
                     setLockedByUser(null)
@@ -763,10 +809,12 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                     // guarantees a reloader never claims the lock while another user
                     // is already editing (SUBSCRIBED fires before presence state is
                     // populated, so we can't trust it here).
+                    // Note: do NOT setIsEditable(false) here — toolbar flicker on reload.
+                    // First sync settles isEditable correctly; if another user is editing,
+                    // sync demotes us within ~200ms.
                     myEditingRef.current = false
                     initialSyncDoneRef.current = false
                     requestedInitialSyncRef.current = false
-                    setIsEditable(false)
 
                     await channel.track({
                         user_id: currentUserId,
@@ -776,6 +824,103 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                     })
                 }
             })
+
+        // Dedicated permission-events channel. Kept separate from presence so
+        // ShareDialog's broadcast subscribe/remove cannot untrack the owner's
+        // isEditing state and falsely trigger an "editor left" banner.
+        const permChannel = supabase.channel(`note-permission-${note.id}`)
+        permChannel
+            .on('broadcast', { event: 'permission-changed' }, async ({ payload }) => {
+                const { targetUserId, targetEmail, newPermission } = payload as { targetUserId: string; targetEmail: string | null; newPermission: 'view' | 'edit' }
+
+                if (targetUserId !== currentUserId && isOwner) {
+                    handleOwnerPermissionChange({ targetUserId, targetEmail, newPermission })
+                    return
+                }
+                if (targetUserId !== currentUserId) return
+
+                const prev = prevPermissionRef.current
+                const newCanEdit = newPermission === 'edit'
+                if (newPermission === prev) return
+
+                prevPermissionRef.current = newPermission
+                hasEditPermissionRef.current = newCanEdit
+                setHasEditPermission(newCanEdit)
+
+                if (newCanEdit) {
+                    setPermissionNotice('upgraded')
+                    const state = channel.presenceState()
+                    let activeOtherEditor: { email: string } | null = null
+                    for (const key of Object.keys(state)) {
+                        for (const p of state[key]) {
+                            const presence = p as unknown as { user_id: string; email?: string; isEditing?: boolean }
+                            if (presence.user_id !== currentUserId && presence.isEditing) {
+                                activeOtherEditor = { email: presence.email || 'Another user' }
+                            }
+                        }
+                    }
+                    if (activeOtherEditor) {
+                        lockedByUserRef.current = activeOtherEditor.email
+                        setLockedByUser(activeOtherEditor.email)
+                        setEditorLeft(false)
+                        setPendingSaveConfirmation(false)
+                    } else {
+                        lockedByUserRef.current = null
+                        setLockedByUser(null)
+                        setEditorLeft(true)
+                        setPendingSaveConfirmation(false)
+                    }
+                } else {
+                    setPermissionNotice('downgraded')
+                    setLockedByUser(null)
+                    if (myEditingRef.current) {
+                        const contentToSave = latestContentRef.current || (editor ? editor.getJSON() : null)
+                        if (contentToSave) {
+                            channel.send({
+                                type: 'broadcast',
+                                event: 'content-sync',
+                                payload: { content: contentToSave, title: titleRef.current },
+                            })
+                            let saveOk = false
+                            try {
+                                const resp = await fetch('/api/save-note', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        noteId: note.id,
+                                        title: titleRef.current,
+                                        content: contentToSave,
+                                        allowDowngradeSave: true,
+                                    }),
+                                })
+                                saveOk = resp.ok
+                            } catch { /* swallow */ }
+                            if (saveOk) {
+                                channel.send({
+                                    type: 'broadcast',
+                                    event: 'content-saved',
+                                    payload: { savedByUserId: currentUserId },
+                                })
+                            }
+                        }
+                        myEditingRef.current = false
+                        await channel.track({
+                            user_id: currentUserId,
+                            email: myEmailRef.current,
+                            isEditing: false,
+                            session_id: sessionIdRef.current,
+                        })
+                    }
+                }
+                setTimeout(() => setPermissionNotice(null), 10000)
+
+                setIsEditable(prev => {
+                    if (!newCanEdit) return false
+                    if (someoneElseEditingRef.current) return false
+                    return prev
+                })
+            })
+            .subscribe()
 
         return () => {
             if (broadcastTimerRef.current) clearTimeout(broadcastTimerRef.current)
@@ -790,10 +935,11 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
             }
             channelRef.current = null
             supabase.removeChannel(channel)
+            supabase.removeChannel(permChannel)
         }
     }, [note.id, currentUserId, isOwner, editor, handleOwnerPermissionChange])
 
-    // Broadcast content changes to view-only users (debounced, 500ms)
+    // Broadcast content changes to view-only users (debounced, 100ms)
     useEffect(() => {
         if (!editor) return
         const handleUpdate = () => {
@@ -808,7 +954,7 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                         title: titleRef.current,
                     },
                 })
-            }, 500)
+            }, 100)
         }
         editor.on('update', handleUpdate)
         return () => { editor.off('update', handleUpdate) }
@@ -858,33 +1004,34 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                 hasEditPermissionRef.current = newCanEdit
                 setHasEditPermission(newCanEdit)
                 if (newCanEdit) {
-                    setShowReloadPrompt(!someoneElseEditingRef.current)
                     setPermissionNotice('upgraded')
-                    // If someone else is already editing, restore the lock banner so the user
-                    // knows they must wait before they can claim the edit lock.
-                    if (someoneElseEditingRef.current) {
-                        const ch = channelRef.current
-                        if (ch) {
-                            const state = ch.presenceState()
-                            for (const key of Object.keys(state)) {
-                                for (const p of state[key]) {
-                                    const presence = p as unknown as { user_id: string; email?: string; isEditing?: boolean }
-                                    if (presence.user_id !== currentUserId && presence.isEditing) {
-                                        lockedByUserRef.current = presence.email || 'Another user'
-                                        setLockedByUser(presence.email || 'Another user')
-                                    }
+                    // Re-check presence inline for an active other editor.
+                    const ch = channelRef.current
+                    let activeOtherEditor: { email: string } | null = null
+                    if (ch) {
+                        const state = ch.presenceState()
+                        for (const key of Object.keys(state)) {
+                            for (const p of state[key]) {
+                                const presence = p as unknown as { user_id: string; email?: string; isEditing?: boolean }
+                                if (presence.user_id !== currentUserId && presence.isEditing) {
+                                    activeOtherEditor = { email: presence.email || 'Another user' }
                                 }
                             }
                         }
+                    }
+                    if (activeOtherEditor) {
+                        setShowReloadPrompt(false)
+                        lockedByUserRef.current = activeOtherEditor.email
+                        setLockedByUser(activeOtherEditor.email)
+                        setEditorLeft(false)
+                        setPendingSaveConfirmation(false)
                     } else {
-                        // Polling fallback for instant broadcast path: show the same
-                        // ready-to-edit handoff banner when no active editor exists.
+                        setShowReloadPrompt(true)
                         lockedByUserRef.current = null
                         setLockedByUser(null)
                         setEditorLeft(true)
                         setPendingSaveConfirmation(false)
                     }
-                    // No else needed: user sees the upgrade banner + can reload to claim lock.
                 } else {
                     setShowReloadPrompt(false)
                     setPermissionNotice('downgraded')
@@ -974,7 +1121,19 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                 navigator.sendBeacon?.('/api/save-note', new Blob([payload], { type: 'application/json' }))
             }
         }
-        const handleBeforeUnload = () => { flushSave() }
+        const handleBeforeUnload = () => {
+            flushSave()
+            // Best-effort: signal isEditing: false before the WebSocket drops so the
+            // new page's first presence sync doesn't see a stale editing ghost.
+            if (myEditingRef.current && channelRef.current) {
+                channelRef.current.track({
+                    user_id: currentUserId,
+                    email: myEmailRef.current,
+                    isEditing: false,
+                    session_id: sessionIdRef.current,
+                })
+            }
+        }
         window.addEventListener('beforeunload', handleBeforeUnload)
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload)

@@ -107,6 +107,7 @@ function ResizableImageView(props: ReactNodeViewProps) {
     const nodePosX = posX
     const nodePosY = posY
     let isDragging = false
+    let lastUpdate = 0
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - mouseStartX
@@ -128,7 +129,34 @@ function ResizableImageView(props: ReactNodeViewProps) {
       const maxY = editorEl ? editorEl.scrollHeight - 50 : 5000
       const newX = Math.max(0, Math.min(nodePosX + dx, maxX))
       const newY = Math.max(0, Math.min(nodePosY + dy, maxY))
-      updateAttributes({ posX: Math.round(newX), posY: Math.round(newY) })
+      
+      // Update DOM style directly for immediate smooth feedback
+      if (wrapperRef.current) {
+        wrapperRef.current.style.left = `${newX}px`
+        wrapperRef.current.style.top = `${newY}px`
+      }
+
+      // Throttled update for real-time sync with other users
+      const now = Date.now()
+      if (now - lastUpdate >= 100) {
+        lastUpdate = now
+        try {
+          const pos = getPos()
+          if (typeof pos === 'number' && editor) {
+            const { tr } = editor.state
+            const currentNode = editor.state.doc.nodeAt(pos)
+            if (currentNode && currentNode.type.name === 'image') {
+              tr.setNodeMarkup(pos, undefined, { 
+                ...currentNode.attrs, 
+                posX: Math.round(newX), 
+                posY: Math.round(newY) 
+              })
+              // addToHistory: false avoids polluting undo/redo with every drag step
+              editor.view.dispatch(tr.setMeta('addToHistory', false))
+            }
+          }
+        } catch {}
+      }
     }
 
     const handleMouseUp = (upEvent: MouseEvent) => {
@@ -136,6 +164,17 @@ function ResizableImageView(props: ReactNodeViewProps) {
       document.removeEventListener('mouseup', handleMouseUp)
 
       if (isDragging) {
+        setDragging(true) // Stay in dragging state for final update
+        const dx = upEvent.clientX - mouseStartX
+        const dy = upEvent.clientY - mouseStartY
+        const editorEl = wrapperRef.current?.closest('.tiptap-editor-canvas')
+        const maxX = editorEl ? editorEl.clientWidth - (attrs.width || 300) : 2000
+        const maxY = editorEl ? editorEl.scrollHeight - 50 : 5000
+        const newX = Math.max(0, Math.min(nodePosX + dx, maxX))
+        const newY = Math.max(0, Math.min(nodePosY + dy, maxY))
+        
+        // Final update ensure it's captured (without throttle)
+        updateAttributes({ posX: Math.round(newX), posY: Math.round(newY) })
         setDragging(false)
         return
       }

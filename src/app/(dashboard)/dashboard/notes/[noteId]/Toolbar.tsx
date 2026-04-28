@@ -338,7 +338,7 @@ export default function Toolbar({ editor, onImageUpload, onDrawingInsert }: { ed
         }
     }, [editor, lastFontSize])
 
-    const storedFontSize = editor?.state.storedMarks?.find(m => m.type.name === 'textStyle')?.attrs.fontSize?.replace('px', '')
+    const storedFontSize = editor?.state.storedMarks?.find(m => m.type.name === 'textStyle')?.attrs?.fontSize?.replace('px', '')
     const currentFontSize = editor?.getAttributes('textStyle')?.fontSize?.replace('px', '') || storedFontSize || lastFontSize || '16'
 
     // Keep cursor height in sync with current font size on empty paragraphs
