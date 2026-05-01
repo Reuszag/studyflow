@@ -341,7 +341,7 @@ export default function TableControls({
                     if (t) {
                         cachePmTable(t)
                         const rows = t.querySelectorAll('tr')
-                        const tr = (rows[rowCtrl?.idx] as HTMLTableRowElement | undefined) ?? null
+                        const tr = (rowCtrl != null ? rows[rowCtrl.idx] as HTMLTableRowElement | undefined : null) ?? null
                         const firstRow = t.querySelector('tr') as HTMLTableRowElement | null
                         const cell = (firstRow && colCtrl != null) ? (firstRow.cells[colCtrl.idx] as HTMLElement | undefined) ?? null : null
                         recalc(t, tr, cell)
