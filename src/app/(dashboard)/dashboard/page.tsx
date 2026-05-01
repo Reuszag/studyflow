@@ -112,7 +112,7 @@ export default async function DashboardPage() {
     }
 
     return (
-        <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10">
+        <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-10">
             {/* Top Bar / Greeting */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>

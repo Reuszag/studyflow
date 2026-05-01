@@ -45,7 +45,7 @@ export default async function DashboardLayout({
 
             <div className="flex-1 flex flex-col min-w-0">
                 <header
-                    className="h-14 flex items-center justify-between px-6 sticky top-0 z-[100000] transition-colors duration-300 relative"
+                    className="h-14 flex items-center justify-between pl-16 pr-3 md:px-6 sticky top-0 z-[100000] transition-colors duration-300 relative"
                     style={{
                         background: 'var(--header-bg)',
                         borderBottom: '1px solid var(--header-border)',

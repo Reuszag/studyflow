@@ -337,14 +337,14 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
             </div>
 
             {/* Kanban Board */}
-            <div className="flex gap-6 pb-4" style={{ height: 'calc(100vh - 26rem)' }}>
+            <div className="flex flex-col md:flex-row gap-6 pb-4 md:overflow-x-auto md:min-h-[400px]" style={{ minHeight: '60vh' }}>
                 {columns.map(col => {
                     const columnTasks = tasks.filter(t => t.status === col.id)
 
                     return (
                         <div
                             key={col.id}
-                            className="flex-1 flex flex-col rounded-2xl min-h-0"
+                            className="flex-1 md:min-w-[280px] flex flex-col rounded-2xl min-h-0"
                             style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, col.id)}
