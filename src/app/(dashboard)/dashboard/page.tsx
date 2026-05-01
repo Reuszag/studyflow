@@ -136,10 +136,10 @@ export default async function DashboardPage() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Study Notes', value: notesCount || 0, icon: Icons.Notes, color: 'text-violet-400', bg: 'rgba(139, 92, 246, 0.1)' },
-                    { label: 'Cloud Storage', value: storageFormatted, icon: Icons.Storage, color: 'text-emerald-400', bg: 'rgba(52, 211, 153, 0.1)' },
-                    { label: 'Tasks Done', value: `${taskCompletionRate}%`, icon: Icons.Tasks, color: 'text-emerald-400', bg: 'rgba(52, 211, 153, 0.1)' },
-                    { label: 'GPA Target', value: gpaTarget, icon: Icons.GPA, color: 'text-violet-400', bg: 'rgba(167, 139, 250, 0.1)' },
+                    { label: 'Study Notes', value: notesCount || 0, icon: Icons.Notes, color: 'text-violet-400', bg: 'rgba(139, 92, 246, 0.1)', desc: '' },
+                    { label: 'Cloud Storage', value: storageFormatted, icon: Icons.Storage, color: 'text-emerald-400', bg: 'rgba(52, 211, 153, 0.1)', desc: '' },
+                    { label: 'Tasks Done', value: `${taskCompletionRate}%`, icon: Icons.Tasks, color: 'text-emerald-400', bg: 'rgba(52, 211, 153, 0.1)', desc: '' },
+                    { label: 'GPA Target', value: gpaTarget, icon: Icons.GPA, color: 'text-violet-400', bg: 'rgba(167, 139, 250, 0.1)', desc: '' },
                 ].map((stat, i) => (
                     <div
                         key={i}
