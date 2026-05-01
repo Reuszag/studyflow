@@ -14,12 +14,15 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
                 relative inline-flex items-center justify-center
                 w-10 h-10 rounded-xl
                 transition-all duration-300 cursor-pointer
+                border border-[var(--card-border)]
+                shadow-lg shadow-blue-900/10
+                hover:scale-105 active:scale-95
                 ${theme === 'dark'
                     ? 'text-yellow-300'
                     : 'text-gray-700'}
                 ${className}
             `}
-            style={{ background: 'var(--overlay-medium)' }}
+            style={{ background: 'var(--toggle-bg)' }}
         >
             {/* Sun icon */}
             <svg

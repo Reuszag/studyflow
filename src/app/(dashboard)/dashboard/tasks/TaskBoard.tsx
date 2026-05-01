@@ -328,9 +328,12 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                         <button
                             type="submit"
                             disabled={isAdding}
-                            className="bg-violet-600 hover:bg-violet-500 text-white font-medium px-5 py-2 rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-violet-900/20"
-                        >
-                            {isAdding ? 'Adding...' : 'Add Task'}
+                            className="font-medium px-5 py-2 rounded-xl transition-all shadow-lg shadow-violet-900/20 disabled:shadow-none"
+                            style={{
+                                background: isAdding ? 'var(--disabled-bg)' : 'var(--accent)',
+                                color: isAdding ? 'var(--disabled-text)' : 'white'
+                            }}
+                        >                            {isAdding ? 'Adding...' : 'Add Task'}
                         </button>
                     </div>
                 </form>

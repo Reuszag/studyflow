@@ -233,8 +233,11 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
             <button
               onClick={handleSaveDrawing}
               disabled={uploading}
-              className="px-4 py-1.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50 cursor-pointer"
-              style={{ background: 'linear-gradient(135deg, var(--accent), #4f46e5)' }}
+              className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:shadow-none"
+              style={{ 
+                background: uploading ? 'var(--disabled-bg)' : 'linear-gradient(135deg, var(--accent), #4f46e5)',
+                color: uploading ? 'var(--disabled-text)' : 'white'
+              }}
             >
               {uploading ? 'Saving...' : 'Insert Drawing'}
             </button>

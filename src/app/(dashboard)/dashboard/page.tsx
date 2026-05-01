@@ -143,7 +143,7 @@ export default async function DashboardPage() {
                 ].map((stat, i) => (
                     <div
                         key={i}
-                        className="p-5 rounded-2xl border transition-all hover:border-violet-500/30 group"
+                        className="p-5 rounded-2xl border-[1.5px] transition-all hover:border-violet-600 hover:bg-[var(--hover-bg-accent)] hover:shadow-xl hover:shadow-violet-900/10 group shadow-sm"
                         style={{
                             background: 'var(--card-bg)',
                             borderColor: 'var(--card-border)',
@@ -212,7 +212,7 @@ export default async function DashboardPage() {
                                 <Link
                                     key={i}
                                     href={card.href}
-                                    className="group p-6 rounded-2xl border transition-all hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]"
+                                    className="group p-6 rounded-2xl border-[1.5px] transition-all hover:scale-[1.01] hover:border-violet-600 hover:bg-[var(--hover-bg-accent)] hover:shadow-2xl active:scale-[0.99] shadow-sm"
                                     style={{
                                         background: 'var(--card-bg)',
                                         borderColor: 'var(--card-border)',
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
                     </section>
 
                     {/* Progress Visualization Placeholder */}
-                    <section className="p-8 rounded-3xl border relative overflow-hidden group" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                    <section className="p-8 rounded-3xl border-[1.5px] relative overflow-hidden group shadow-sm" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:bg-cyan-500/10 transition-all duration-700"></div>
                         
                         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">

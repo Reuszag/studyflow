@@ -281,7 +281,8 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                             type="button"
                             onClick={() => setShowAvatarMenu(!showAvatarMenu)}
                             disabled={uploading || deleting}
-                            className="text-sm text-violet-400 hover:text-violet-300 disabled:opacity-50 transition"
+                            className="text-sm font-semibold transition-colors disabled:opacity-50"
+                            style={{ color: 'var(--accent)' }}
                         >
                             {uploading ? 'Uploading...' : deleting ? 'Removing...' : 'Change Profile Picture'}
                         </button>
@@ -461,7 +462,16 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                                 type="button"
                                 onClick={handleChangePassword}
                                 disabled={pwSaving || !currentPassword || !allPassed || !passwordsMatch}
-                                className="w-full py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                className="w-full py-2.5 rounded-lg text-sm font-bold text-white transition-all shadow-lg shadow-violet-900/20"
+                                style={{
+                                    background: (pwSaving || !currentPassword || !allPassed || !passwordsMatch) 
+                                        ? 'var(--disabled-bg)' 
+                                        : 'linear-gradient(135deg, #7c3aed, #4c1d95)',
+                                    color: (pwSaving || !currentPassword || !allPassed || !passwordsMatch) 
+                                        ? 'var(--disabled-text)' 
+                                        : 'white',
+                                    border: '1px solid var(--card-border)'
+                                }}
                             >
                                 {pwSaving ? 'Updating...' : 'Update Password'}
                             </button>
@@ -484,7 +494,16 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     <button
                         type="submit"
                         disabled={!hasChanges || saving}
-                        className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:from-violet-500 hover:to-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 shadow-lg shadow-violet-900/20"
+                        style={{
+                            background: (!hasChanges || saving) 
+                                ? 'var(--disabled-bg)' 
+                                : 'linear-gradient(135deg, #7c3aed, #4c1d95)',
+                            color: (!hasChanges || saving) 
+                                ? 'var(--disabled-text)' 
+                                : 'white',
+                            border: '1px solid var(--card-border)'
+                        }}
                     >
                         {saving ? 'Saving...' : 'Save Profile'}
                     </button>

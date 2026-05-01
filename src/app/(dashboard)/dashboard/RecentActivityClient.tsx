@@ -55,7 +55,7 @@ export default function RecentActivityClient() {
     }, [])
 
     return (
-        <section id="recent-activity" className="p-6 rounded-2xl border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+        <section id="recent-activity" className="p-6 rounded-2xl border-[1.5px] shadow-sm" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
             <h3 className="font-bold text-sm uppercase tracking-widest mb-6" style={{ color: 'var(--muted-text)' }}>Recent Activity</h3>
             <div className="space-y-6">
                 {!isLoading && activityFeed.length > 0 ? 
@@ -63,7 +63,12 @@ export default function RecentActivityClient() {
                         const IconComponent = getIcon(item.icon)
                         return (
                             <div key={i} className="flex gap-4 group cursor-pointer min-w-0">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${item.color}`} style={{ background: 'var(--hover-overlay)', borderColor: 'var(--active-nav-border)' }}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border-2 shadow-sm transition-transform group-hover:scale-110`} 
+                                     style={{ 
+                                         background: `color-mix(in srgb, ${item.color.replace('text-', '')} 15%, white)`, 
+                                         borderColor: `color-mix(in srgb, ${item.color.replace('text-', '')} 40%, transparent)`,
+                                         color: `color-mix(in srgb, ${item.color.replace('text-', '')} 80%, black)`
+                                     }}>
                                     <IconComponent />
                                 </div>
                                 <div className="min-w-0 flex-1">

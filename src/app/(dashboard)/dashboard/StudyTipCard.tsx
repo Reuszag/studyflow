@@ -34,7 +34,7 @@ export default function StudyTipCard() {
     const tip = (studyTips as string[])[tipIndex] || ''
 
     return (
-        <div className="p-6 rounded-2xl border bg-violet-600/5 border-violet-500/20">
+        <div className="p-6 rounded-2xl border-[1.5px] bg-violet-600/5 border-violet-500/30 shadow-sm">
             <div className="flex items-center gap-2 mb-3 text-violet-400">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M8 12l2 2 4-4" />

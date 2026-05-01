@@ -109,13 +109,13 @@ export default function Sidebar() {
                 `}
                 style={{
                     background: 'var(--sidebar-bg)',
-                    borderRight: '1px solid var(--card-border)',
+                    borderRight: '1.5px solid var(--card-border)',
                 }}
             >
             {/* Logo */}
             <div
                 className={`h-14 flex items-center overflow-hidden whitespace-nowrap transition-all ${collapsed ? 'md:px-0 md:justify-center pl-5 pr-3 justify-between' : 'pl-5 pr-3 justify-between'}`}
-                style={{ borderBottom: '1px solid var(--card-border)' }}
+                style={{ borderBottom: '1.5px solid var(--divider-color)' }}
             >
                 {collapsed ? (
                     <>

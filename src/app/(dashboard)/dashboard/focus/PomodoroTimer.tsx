@@ -163,7 +163,7 @@ export default function PomodoroTimer() {
                                 }`}
                             style={{
                                 borderBottomColor: mode === m ? modes[m].color : 'transparent',
-                                ...(mode === m ? { background: 'var(--sidebar-toggle-bg)', color: 'var(--heading-text)' } : { color: 'var(--muted-text)' }),
+                                ...(mode === m ? { background: 'var(--sidebar-toggle-bg)', color: 'var(--heading-text)' } : { background: '#94a3b8', color: 'white' }),
                             }}
                         >
                             {modes[m].label}
@@ -231,11 +231,11 @@ export default function PomodoroTimer() {
                     {dots.map(i => (
                         <div
                             key={i}
-                            className={`w-3 h-3 rounded-full transition-all duration-300 shadow-inner ${i < (pomodoroCount % POMODOROS_BEFORE_LONG)
+                            className={`w-3.5 h-3.5 rounded-full transition-all duration-300 shadow-inner ${i < (pomodoroCount % POMODOROS_BEFORE_LONG)
                                     ? 'bg-violet-500 scale-110 shadow-[0_0_8px_rgba(139,92,246,0.6)]'
-                                    : ''
+                                    : 'bg-slate-500/30'
                                 }`}
-                            style={i >= (pomodoroCount % POMODOROS_BEFORE_LONG) ? { background: 'var(--overlay-medium)', border: '1.5px solid var(--overlay-strong)' } : undefined}
+                            style={i >= (pomodoroCount % POMODOROS_BEFORE_LONG) ? { background: '#64748b', border: '1px solid var(--card-border)' } : undefined}
                         />
                     ))}
                     <span className="ml-2 text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
@@ -254,8 +254,8 @@ export default function PomodoroTimer() {
                 <div className="flex items-center gap-4 w-full relative z-10 mt-2">
                     <button
                         onClick={handleReset}
-                        className="flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95"
-                        style={{ color: 'var(--text-tertiary)', background: 'var(--overlay-soft)', border: '1px solid var(--pill-border)' }}
+                        className="flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95 hover:bg-black/5"
+                        style={{ color: 'var(--text-secondary)', background: 'var(--overlay-medium)', border: '1px solid var(--pill-border)' }}
                     >
                         Reset
                     </button>
@@ -264,10 +264,10 @@ export default function PomodoroTimer() {
                         className="flex-[2] py-3.5 rounded-xl text-base font-bold transition-all duration-200 shadow-xl active:scale-95 flex items-center justify-center gap-2"
                         style={{
                             background: running
-                                ? 'var(--overlay-medium)'
+                                ? `color-mix(in srgb, ${cfg.color} 15%, white)`
                                 : `linear-gradient(135deg, ${cfg.color}e6, ${cfg.ring})`,
                             color: running ? cfg.color : 'white',
-                            border: running ? `1px solid ${cfg.color}33` : '1px solid transparent',
+                            border: running ? `1.5px solid color-mix(in srgb, ${cfg.color} 30%, transparent)` : '1px solid transparent',
                         }}
                     >
                         {running ? (

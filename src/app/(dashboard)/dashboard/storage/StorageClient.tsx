@@ -221,7 +221,11 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
-                            className="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                            className="text-white px-5 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 disabled:shadow-none"
+                            style={{
+                                background: uploading ? 'var(--disabled-bg)' : 'var(--accent)',
+                                color: uploading ? 'var(--disabled-text)' : 'white'
+                            }}
                         >
                             {uploading ? (
                             <>

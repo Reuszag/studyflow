@@ -199,7 +199,7 @@ export default function GPACalculator() {
 
                 {/* Header */}
                 <div>
-                    <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--heading-text)' }}>
+                    <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--accent)' }}>
                         GPA Calculator
                     </h1>
                     <p className="text-sm" style={{ color: 'var(--muted-text)' }}>
@@ -379,8 +379,8 @@ export default function GPACalculator() {
                                                     style={{ color: 'var(--text-tertiary)', background: 'var(--overlay-soft)' }}
                                                     title="Edit">✏️</button>
                                                 <button onClick={() => handleDelete(s.id)}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
-                                                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }}
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg transition-all hover:bg-red-500/20 disabled:bg-[var(--disabled-bg)] disabled:text-[var(--disabled-text)] disabled:border-none"
+                                                    style={{ background: 'var(--overlay-soft)', border: '1px solid var(--card-border)', color: '#f87171' }}
                                                     title="Delete">
                                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                                                         <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
@@ -432,7 +432,11 @@ export default function GPACalculator() {
                                         <button
                                             onClick={handleSave}
                                             disabled={savingLoading}
-                                            className="rounded-xl px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white transition-all shrink-0 disabled:opacity-50"
+                                            className="rounded-xl px-4 py-2 text-sm font-medium transition-all shrink-0 disabled:shadow-none"
+                                            style={{ 
+                                                background: savingLoading ? 'var(--disabled-bg)' : 'linear-gradient(to right, var(--color-violet-600), var(--color-indigo-600))', 
+                                                color: savingLoading ? 'var(--disabled-text)' : 'white' 
+                                            }}
                                         >
                                             {savingLoading ? 'Saving…' : editingCalcId ? 'Update' : 'Save'}
                                         </button>
@@ -486,23 +490,23 @@ export default function GPACalculator() {
                                         <div className="flex items-center gap-2 shrink-0">
                                             <button
                                                 onClick={() => setExpandedSave(expanded ? null : calc.id)}
-                                                className="text-xs px-3 py-1.5 rounded-lg transition-all font-medium"
-                                                style={{ background: 'var(--overlay-soft)', color: 'var(--text-tertiary)' }}
+                                                className="text-xs px-3 py-1.5 rounded-lg transition-all font-medium hover:bg-violet-500/10 hover:border-violet-400"
+                                                style={{ background: 'var(--overlay-soft)', border: '1px solid var(--card-border)', color: 'var(--accent)' }}
                                             >
                                                 {expanded ? 'Hide' : 'View'}
                                             </button>
                                             <button
                                                 onClick={() => handleLoadSave(calc)}
-                                                className="text-xs px-3 py-1.5 rounded-lg transition-all font-medium"
-                                                style={{ background: 'var(--overlay-medium)', color: 'var(--text-secondary)' }}
+                                                className="text-xs px-3 py-1.5 rounded-lg transition-all font-medium hover:bg-violet-500/10 hover:border-violet-400"
+                                                style={{ background: 'var(--overlay-soft)', border: '1px solid var(--card-border)', color: 'var(--accent)' }}
                                             >
                                                 Edit
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteSave(calc.id)}
                                                 disabled={deleting}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg transition-all disabled:opacity-50"
-                                                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }}
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg transition-all disabled:bg-[var(--disabled-bg)] disabled:text-[var(--disabled-text)] disabled:border-none hover:bg-red-500/20"
+                                                style={{ background: 'var(--overlay-soft)', border: '1px solid var(--card-border)', color: '#f87171' }}
                                                 title="Delete">
                                                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                                                     <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
