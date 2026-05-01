@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfile, deleteAvatar, changePassword } from './actions'
@@ -13,6 +13,22 @@ interface ProfileFormProps {
         preferences: Record<string, unknown> | null
     }
     email: string
+}
+
+const PASSWORD_RULES = [
+    { key: 'length', label: 'At least 8 characters', test: (pw: string) => pw.length >= 8 },
+    { key: 'uppercase', label: 'One uppercase letter (A-Z)', test: (pw: string) => /[A-Z]/.test(pw) },
+    { key: 'lowercase', label: 'One lowercase letter (a-z)', test: (pw: string) => /[a-z]/.test(pw) },
+    { key: 'number', label: 'One number (0-9)', test: (pw: string) => /[0-9]/.test(pw) },
+    { key: 'special', label: 'One special character (!@#$…)', test: (pw: string) => /[^A-Za-z0-9]/.test(pw) },
+]
+
+function getStrengthMeta(score: number) {
+    if (score <= 1) return { label: 'Very weak', color: '#ef4444', percent: 20 }
+    if (score === 2) return { label: 'Weak', color: '#f97316', percent: 40 }
+    if (score === 3) return { label: 'Fair', color: '#eab308', percent: 60 }
+    if (score === 4) return { label: 'Strong', color: '#22c55e', percent: 80 }
+    return { label: 'Very strong', color: '#16a34a', percent: 100 }
 }
 
 export default function ProfileForm({ profile, email }: ProfileFormProps) {
@@ -30,7 +46,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
     const [showAvatarMenu, setShowAvatarMenu] = useState(false)
     const [showImagePreview, setShowImagePreview] = useState(false)
 
-    // Change password state
     const [showPasswordSection, setShowPasswordSection] = useState(false)
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -41,6 +56,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
     const [pwSaving, setPwSaving] = useState(false)
     const [pwMessage, setPwMessage] = useState('')
     const [pwError, setPwError] = useState('')
+    const [pwTouched, setPwTouched] = useState(false)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const menuRef = useRef<HTMLDivElement>(null)
@@ -166,22 +182,21 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
         setDeleting(false)
     }
 
-    const PASSWORD_RULES = [
-        { key: 'length', test: (pw: string) => pw.length >= 8, label: 'At least 8 characters' },
-        { key: 'uppercase', test: (pw: string) => /[A-Z]/.test(pw), label: 'One uppercase letter' },
-        { key: 'lowercase', test: (pw: string) => /[a-z]/.test(pw), label: 'One lowercase letter' },
-        { key: 'number', test: (pw: string) => /[0-9]/.test(pw), label: 'One number' },
-        { key: 'special', test: (pw: string) => /[^A-Za-z0-9]/.test(pw), label: 'One special character' },
-    ]
-    const pwRules = PASSWORD_RULES.map(r => ({ ...r, pass: r.test(newPassword) }))
-    const allPwRulesPassed = pwRules.every(r => r.pass)
-    const pwsMatch = newPassword === confirmNewPassword
+    const ruleResults = useMemo(
+        () => PASSWORD_RULES.map((r) => ({ ...r, pass: r.test(newPassword) })),
+        [newPassword],
+    )
+    const passedCount = ruleResults.filter((r) => r.pass).length
+    const allPassed = passedCount === PASSWORD_RULES.length
+    const strength = getStrengthMeta(passedCount)
+    const passwordsMatch = newPassword === confirmNewPassword
 
     async function handleChangePassword() {
         setPwMessage('')
         setPwError('')
-        if (!allPwRulesPassed) { setPwError('New password does not meet all requirements.'); return }
-        if (!pwsMatch) { setPwError('New passwords do not match.'); return }
+        setPwTouched(true)
+        if (!allPassed) { setPwError('New password does not meet all requirements.'); return }
+        if (!passwordsMatch) { setPwError('New passwords do not match.'); return }
         if (currentPassword === newPassword) { setPwError('New password must be different from current password.'); return }
         setPwSaving(true)
         const result = await changePassword(currentPassword, newPassword)
@@ -193,6 +208,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
             setNewPassword('')
             setConfirmNewPassword('')
             setShowPasswordSection(false)
+            setPwTouched(false)
         }
         setPwSaving(false)
     }
@@ -215,7 +231,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
 
     return (
         <>
-            {/* Image Preview Modal */}
             {showImagePreview && avatarUrl && (
                 <div
                     className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center cursor-pointer backdrop-blur-sm"
@@ -239,7 +254,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
             )}
 
             <form onSubmit={handleSave} className="space-y-6">
-                {/* Avatar Section */}
                 <div className="flex flex-col items-center gap-3">
                     <div
                         className={`w-24 h-24 rounded-full overflow-hidden border-2 transition ${
@@ -262,7 +276,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         )}
                     </div>
 
-                    {/* Avatar actions dropdown */}
                     <div className="relative" ref={menuRef}>
                         <button
                             type="button"
@@ -311,7 +324,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     <p className="text-xs" style={{ color: 'var(--text-quaternary)' }}>JPEG, PNG, WebP, or GIF. Max 2MB.</p>
                 </div>
 
-                {/* Email (read-only) */}
                 <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Email</label>
                     <input
@@ -324,7 +336,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     <p className="text-xs mt-1" style={{ color: 'var(--muted-text)' }}>Email cannot be changed here.</p>
                 </div>
 
-                {/* Full Name */}
                 <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Full Name</label>
                     <input
@@ -341,7 +352,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                 <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--card-border)' }}>
                     <button
                         type="button"
-                        onClick={() => { setShowPasswordSection(v => !v); setPwError(''); setPwMessage('') }}
+                        onClick={() => { setShowPasswordSection(v => !v); setPwError(''); setPwMessage(''); setPwTouched(false) }}
                         className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors"
                         style={{ background: 'var(--overlay-soft)', color: 'var(--text-secondary)' }}
                     >
@@ -354,7 +365,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
 
                     {showPasswordSection && (
                         <div className="px-4 pb-4 pt-3 space-y-3" style={{ background: 'var(--overlay-soft)' }}>
-                            {/* Current Password */}
                             <div>
                                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--label-text)' }}>Current Password</label>
                                 <div className="relative">
@@ -378,7 +388,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                                     <input
                                         type={showNewPw ? 'text' : 'password'}
                                         value={newPassword}
-                                        onChange={e => setNewPassword(e.target.value)}
+                                        onChange={e => { setNewPassword(e.target.value); setPwTouched(true) }}
                                         required
                                         className="w-full rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                                         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
@@ -386,11 +396,38 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                                     />
                                     <EyeIcon show={showNewPw} onToggle={() => setShowNewPw(v => !v)} />
                                 </div>
+                                
+                                {/* Strength meter */}
                                 {newPassword.length > 0 && (
+                                    <div className="mt-2">
+                                        <div
+                                            className="w-full h-1.5 rounded-full overflow-hidden"
+                                            style={{ background: 'var(--input-border)' }}
+                                        >
+                                            <div
+                                                className="h-full rounded-full transition-all duration-300"
+                                                style={{ width: `${strength.percent}%`, backgroundColor: strength.color }}
+                                            />
+                                        </div>
+                                        <p className="text-[10px] mt-1 font-medium" style={{ color: strength.color }}>
+                                            {strength.label}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Rule checklist */}
+                                {(newPassword.length > 0 || pwTouched) && (
                                     <ul className="mt-2 space-y-0.5">
-                                        {pwRules.map(r => (
-                                            <li key={r.key} className="flex items-center gap-1.5 text-xs" style={{ color: r.pass ? '#22c55e' : 'var(--muted-text)' }}>
-                                                <span>{r.pass ? '✓' : '○'}</span> {r.label}
+                                        {ruleResults.map((r) => (
+                                            <li
+                                                key={r.key}
+                                                className="flex items-center gap-1.5 text-[10px]"
+                                                style={{
+                                                    color: r.pass ? '#22c55e' : 'var(--muted-text)',
+                                                }}
+                                            >
+                                                <span>{r.pass ? '✓' : '○'}</span>
+                                                <span>{r.label}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -407,13 +444,13 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                                         onChange={e => setConfirmNewPassword(e.target.value)}
                                         required
                                         className="w-full rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
-                                        style={{ background: 'var(--input-bg)', border: `1px solid ${confirmNewPassword.length > 0 && !pwsMatch ? '#f87171' : 'var(--input-border)'}`, color: 'var(--input-text)' }}
+                                        style={{ background: 'var(--input-bg)', border: `1px solid ${confirmNewPassword.length > 0 && !passwordsMatch ? '#f87171' : 'var(--input-border)'}`, color: 'var(--input-text)' }}
                                         placeholder="Repeat new password"
                                     />
                                     <EyeIcon show={showConfirmNewPw} onToggle={() => setShowConfirmNewPw(v => !v)} />
                                 </div>
-                                {confirmNewPassword.length > 0 && !pwsMatch && (
-                                    <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
+                                {confirmNewPassword.length > 0 && !passwordsMatch && (
+                                    <p className="text-red-400 text-[10px] mt-1">Passwords do not match</p>
                                 )}
                             </div>
 
@@ -423,7 +460,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                             <button
                                 type="button"
                                 onClick={handleChangePassword}
-                                disabled={pwSaving || !currentPassword || !newPassword || !confirmNewPassword}
+                                disabled={pwSaving || !currentPassword || !allPassed || !passwordsMatch}
                                 className="w-full py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 {pwSaving ? 'Updating...' : 'Update Password'}
@@ -432,7 +469,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     )}
                 </div>
 
-                {/* Messages */}
                 {message && (
                     <p className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 px-4 py-2.5 rounded-xl">
                         {message}
@@ -444,7 +480,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     </p>
                 )}
 
-                {/* Buttons */}
                 <div className="flex gap-3">
                     <button
                         type="submit"

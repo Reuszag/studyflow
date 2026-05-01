@@ -75,18 +75,15 @@ export async function deleteAvatar() {
         return { error: 'Not authenticated' }
     }
 
-    // List files in the user's avatar folder to find the current avatar
     const { data: files } = await supabase.storage
         .from('avatars')
         .list(user.id)
 
-    // Delete all avatar files for this user
     if (files && files.length > 0) {
         const filePaths = files.map((file) => `${user.id}/${file.name}`)
         await supabase.storage.from('avatars').remove(filePaths)
     }
 
-    // Set avatar_url to null in profiles
     const { error } = await supabase
         .from('profiles')
         .update({

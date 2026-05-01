@@ -286,8 +286,6 @@ describe('advanceMode', () => {
     })
 })
 
-// ─── Timer clampModeDuration tests ───────────────────────────────────────────
-
 describe('clampModeDuration (saveModeSettings clamping)', () => {
     it('clamps below min to 1', () => {
         expect(clampModeDuration(0)).toBe(1)

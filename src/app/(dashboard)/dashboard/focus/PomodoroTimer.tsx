@@ -15,7 +15,7 @@ function formatTime(seconds: number) {
 
 const POMODOROS_BEFORE_LONG = 4
 
-// SVG ring dimensions
+
 const R = 90
 const CIRC = 2 * Math.PI * R
 

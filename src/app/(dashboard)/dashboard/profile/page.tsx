@@ -28,11 +28,11 @@ export default async function ProfilePage() {
     }
 
     return (
-        <div className="p-8 max-w-lg mx-auto">
+        <div className="p-4 sm:p-8 max-w-lg mx-auto w-full">
             <h2 className="text-3xl font-bold mb-1" style={{ color: 'var(--heading-text)' }}>Your Profile</h2>
             <p className="mb-8" style={{ color: 'var(--muted-text)' }}>Update your personal information below.</p>
 
-            <div className="rounded-2xl shadow p-8" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+            <div className="rounded-2xl shadow p-4 sm:p-8" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                 <ProfileForm profile={profileData} email={user.email || ''} />
             </div>
         </div>

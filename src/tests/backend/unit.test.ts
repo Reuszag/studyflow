@@ -388,8 +388,6 @@ describe('imageUrlsToPaths', () => {
     })
 })
 
-// ─── getUniqueNoteTitle ───────────────────────────────────────────────────────
-
 describe('getUniqueNoteTitle (note auto-naming)', () => {
     it('returns Untitled when no existing notes', () => {
         expect(getUniqueNoteTitle([])).toBe('Untitled')

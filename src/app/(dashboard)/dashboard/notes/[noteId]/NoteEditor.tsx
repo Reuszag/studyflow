@@ -229,7 +229,7 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
         },
         editorProps: {
             attributes: {
-                class: 'outline-none min-h-[500px] px-8 py-6',
+                class: 'outline-none min-h-[500px] px-4 sm:px-8 py-4 sm:py-6',
             },
         },
     })
@@ -1245,7 +1245,7 @@ export default function NoteEditor({ note, canEdit, currentUserId }: NoteEditorP
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             disabled={!isEditable}
-                            className="bg-transparent text-lg font-bold outline-none w-64 sm:w-96"
+                            className="bg-transparent text-lg font-bold outline-none w-full max-w-[16rem] sm:max-w-sm md:max-w-md"
                             style={{ color: duplicateWarning ? '#f87171' : 'var(--heading-text)' }}
                             placeholder="Untitled"
                         />

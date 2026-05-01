@@ -15,7 +15,6 @@ function normalizeStoragePath(rawPath: string): string {
                 path = url.pathname.slice(idx + marker.length)
             }
         } catch {
-            // Keep original if URL parsing fails
         }
     }
 
@@ -63,14 +62,12 @@ export async function GET(request: NextRequest) {
                             cookieStore.set(name, value, options)
                         )
                     } catch {
-                        // Ignored in read-only context
                     }
                 },
             },
         }
     )
 
-    // Verify user is authenticated
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
         return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })

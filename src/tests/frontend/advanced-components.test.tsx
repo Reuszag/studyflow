@@ -36,6 +36,7 @@ vi.stubGlobal('fetch', fetchMock)
 
 import NoteNotifications from '@/app/(dashboard)/dashboard/NoteNotifications'
 import DrawingCanvas from '@/app/(dashboard)/dashboard/notes/[noteId]/DrawingCanvas'
+import { NotificationProvider } from '@/lib/NotificationContext'
 
 describe('NoteNotifications', () => {
     beforeEach(() => {
@@ -51,7 +52,11 @@ describe('NoteNotifications', () => {
     })
 
     it('shows a toast when a note is shared', async () => {
-        render(<NoteNotifications />)
+        render(
+            <NotificationProvider>
+                <NoteNotifications />
+            </NotificationProvider>
+        )
 
         await waitFor(() => expect(mockSupabase.channel).toHaveBeenCalled())
 
@@ -63,7 +68,11 @@ describe('NoteNotifications', () => {
     })
 
     it('shows a toast when a shared note is removed', async () => {
-        render(<NoteNotifications />)
+        render(
+            <NotificationProvider>
+                <NoteNotifications />
+            </NotificationProvider>
+        )
 
         await waitFor(() => expect(mockSupabase.channel).toHaveBeenCalled())
 
