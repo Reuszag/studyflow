@@ -49,14 +49,19 @@ const NAV_LINKS = [
 export default function Sidebar() {
     const pathname = usePathname()
     const [collapsed, setCollapsed] = React.useState(false)
+    const [mobileOpen, setMobileOpen] = React.useState(false)
 
-    // Load preference from localStorage
+
     React.useEffect(() => {
         const saved = localStorage.getItem('sidebar-collapsed')
         if (saved !== null) {
             setCollapsed(saved === 'true')
         }
     }, [])
+
+    React.useEffect(() => {
+        setMobileOpen(false)
+    }, [pathname])
 
     const toggleCollapse = () => {
         const newState = !collapsed
@@ -70,37 +75,90 @@ export default function Sidebar() {
     }
 
     return (
-        <aside 
-            className={`${collapsed ? 'w-20' : 'w-60'} shrink-0 flex flex-col sticky top-0 h-screen transition-all duration-300 relative z-[100010]`}
-            style={{
-                background: 'var(--sidebar-bg)',
-                borderRight: '1px solid var(--card-border)',
-            }}
-        >
+        <>
+            {/* Mobile hamburger - only on small screens, hidden when drawer open */}
+            <button
+                onClick={() => setMobileOpen(true)}
+                className={`${mobileOpen ? 'hidden' : ''} md:hidden fixed top-3 left-3 z-[100020] p-2 rounded-lg shadow-md`}
+                style={{ background: 'var(--sidebar-bg)', border: '1px solid var(--card-border)', color: 'var(--heading-text)' }}
+                aria-label="Open menu"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+
+            {/* Mobile overlay */}
+            {mobileOpen && (
+                <div
+                    onClick={() => setMobileOpen(false)}
+                    className="md:hidden fixed inset-0 bg-black/50 z-[100015]"
+                />
+            )}
+
+            <aside
+                className={`
+                    ${collapsed ? 'md:w-20' : 'md:w-60'}
+                    ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+                    md:translate-x-0
+                    fixed md:sticky top-0 left-0
+                    w-60 shrink-0 flex flex-col h-screen
+                    transition-all duration-300 z-[100018]
+                `}
+                style={{
+                    background: 'var(--sidebar-bg)',
+                    borderRight: '1px solid var(--card-border)',
+                }}
+            >
             {/* Logo */}
             <div
-                className={`h-14 flex items-center overflow-hidden whitespace-nowrap transition-all ${collapsed ? 'px-0 justify-center' : 'pl-5 pr-3 justify-between'}`}
+                className={`h-14 flex items-center overflow-hidden whitespace-nowrap transition-all ${collapsed ? 'md:px-0 md:justify-center pl-5 pr-3 justify-between' : 'pl-5 pr-3 justify-between'}`}
                 style={{ borderBottom: '1px solid var(--card-border)' }}
             >
                 {collapsed ? (
-                    <button 
-                        onClick={toggleCollapse}
-                        className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-[var(--sidebar-toggle-bg)] text-violet-500 transition-all duration-200"
-                        title="Expand sidebar"
-                    >
-                        <span className="text-lg font-bold tracking-tighter">SF</span>
-                    </button>
+                    <>
+                        <button
+                            onClick={toggleCollapse}
+                            className="hidden md:flex items-center justify-center w-10 h-10 rounded-xl hover:bg-[var(--sidebar-toggle-bg)] text-violet-500 transition-all duration-200"
+                            title="Expand sidebar"
+                        >
+                            <span className="text-lg font-bold tracking-tighter">SF</span>
+                        </button>
+                        <span className="md:hidden text-lg font-bold tracking-tight" style={{ color: 'var(--heading-text)' }}>StudyFlow</span>
+                        <button
+                            onClick={() => setMobileOpen(false)}
+                            className="md:hidden p-1.5 rounded-lg hover:bg-[var(--sidebar-toggle-bg)] text-[var(--muted-text)]"
+                            aria-label="Close menu"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </>
                 ) : (
                     <>
                         <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--heading-text)' }}>StudyFlow</span>
-                        <button 
+                        <button
                             onClick={toggleCollapse}
-                            className="p-1.5 rounded-lg hover:bg-[var(--sidebar-toggle-bg)] text-[var(--muted-text)] hover:text-[var(--heading-text)] transition-all duration-200"
+                            className="hidden md:block p-1.5 rounded-lg hover:bg-[var(--sidebar-toggle-bg)] text-[var(--muted-text)] hover:text-[var(--heading-text)] transition-all duration-200"
                             title="Collapse sidebar"
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
                                 <line x1="9" y1="3" x2="9" y2="21"/>
+                            </svg>
+                        </button>
+                        <button
+                            onClick={() => setMobileOpen(false)}
+                            className="md:hidden p-1.5 rounded-lg hover:bg-[var(--sidebar-toggle-bg)] text-[var(--muted-text)]"
+                            aria-label="Close menu"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
                         </button>
                     </>
@@ -111,13 +169,15 @@ export default function Sidebar() {
             <nav className="flex-1 py-4 px-3 flex flex-col gap-2 overflow-y-auto overflow-x-hidden scrollbar-none">
                 {NAV_LINKS.map(({ href, label, iconKey, exact }) => {
                     const active = isActive(href, exact)
+                    const showCollapsed = collapsed
                     return (
                         <Link
                             key={href}
                             href={href}
-                            title={collapsed ? label : undefined}
+                            onClick={() => setMobileOpen(false)}
+                            title={showCollapsed ? label : undefined}
                             className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150 whitespace-nowrap
-                                ${collapsed ? 'justify-center p-2.5 mx-auto w-11 h-11' : 'px-3 py-2.5'}
+                                ${showCollapsed ? 'md:justify-center md:p-2.5 md:mx-auto md:w-11 md:h-11 px-3 py-2.5' : 'px-3 py-2.5'}
                                 ${active
                                     ? 'border shadow-sm'
                                     : 'border border-transparent'
@@ -128,11 +188,12 @@ export default function Sidebar() {
                             }
                         >
                             <span className="shrink-0 flex items-center justify-center">{NAV_ICONS[iconKey]}</span>
-                            {!collapsed && <span>{label}</span>}
+                            <span className={showCollapsed ? 'md:hidden' : ''}>{label}</span>
                         </Link>
                     )
                 })}
             </nav>
-        </aside>
+            </aside>
+        </>
     )
 }

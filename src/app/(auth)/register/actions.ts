@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 
 export async function registerUser(email: string, password: string, captchaToken: string) {
-    // 1. Verify reCAPTCHA token server-side
     const secretKey = process.env.RECAPTCHA_SECRET_KEY
     if (!secretKey) {
         return { error: 'Server configuration error: missing CAPTCHA secret key.' }
@@ -21,7 +20,6 @@ export async function registerUser(email: string, password: string, captchaToken
         return { error: 'CAPTCHA verification failed. Please try again.' }
     }
 
-    // 2. Create user via Supabase
     const supabase = await createClient()
 
     const { data, error } = await supabase.auth.signUp({
@@ -33,14 +31,7 @@ export async function registerUser(email: string, password: string, captchaToken
         return { error: error.message }
     }
 
-    // Duplicate email: Supabase silently "succeeds" but returns no identities
-    if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-        return { error: 'An account with this email already exists. Please sign in instead.' }
-    }
-
-    // If email confirmation is OFF → session exists immediately
     if (data.session) {
-        // Ensure the profiles table has the email stored
         if (data.user) {
             await supabase
                 .from('profiles')
@@ -50,7 +41,6 @@ export async function registerUser(email: string, password: string, captchaToken
         return { success: true, redirect: '/dashboard' }
     }
 
-    // If email confirmation is ON, try to store email in profiles for the new user
     if (data.user) {
         await supabase
             .from('profiles')
@@ -58,6 +48,5 @@ export async function registerUser(email: string, password: string, captchaToken
             .eq('id', data.user.id)
     }
 
-    // If email confirmation is ON → tell user to check email
     return { success: true, confirmEmail: true }
 }

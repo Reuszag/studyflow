@@ -13,14 +13,12 @@ export default async function NotesPage() {
         redirect('/login')
     }
 
-    // Fetch notes owned by the user
     const { data: ownedNotes } = await supabase
         .from('notes')
         .select('id, title, updated_at, created_at, owner_id')
         .eq('owner_id', user.id)
         .order('updated_at', { ascending: false })
 
-    // Fetch notes shared with the user
     const { data: sharedEntries } = await supabase
         .from('note_shares')
         .select('permission, notes(id, title, updated_at, created_at, owner_id)')
@@ -36,7 +34,7 @@ export default async function NotesPage() {
         .filter(Boolean)
 
     return (
-        <div className="p-8 max-w-5xl mx-auto h-full flex flex-col">
+        <div className="p-4 sm:p-8 max-w-5xl mx-auto h-full flex flex-col w-full">
             <div className="mb-8 flex items-center justify-between shrink-0">
                 <div>
                     <h2 className="text-3xl font-bold mb-1" style={{ color: 'var(--heading-text)' }}>Notes</h2>

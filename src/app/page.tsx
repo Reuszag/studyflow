@@ -81,7 +81,6 @@ export default function LandingPage() {
                         <p className="text-sm leading-relaxed" style={{ color: 'var(--muted-text)' }}>Clean Kanban-style boards to manage your assignments, deadlines, and daily academic goals.</p>
                     </div>
 
-                    {/* Storage */}
                     <div>
                         <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center mb-4 text-orange-500 border border-orange-500/20">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -111,10 +110,8 @@ export default function LandingPage() {
                 </div>
             </main>
 
-            {/* Simple Footer */}
-            <footer className="px-6 py-12 text-center max-w-6xl mx-auto w-full mt-auto opacity-50 text-xs font-medium uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>
-                &copy; 2026 StudyFlow &mdash; Academic workspace
-            </footer>
         </div>
     )
 }
+
+

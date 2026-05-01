@@ -137,7 +137,6 @@ export default function RegisterPage() {
             className="min-h-screen flex items-center justify-center relative overflow-hidden transition-colors duration-300"
             style={{ background: 'var(--background)' }}
         >
-            {/* Background glow orbs */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ opacity: 'var(--glow-opacity)' }}>
                 <div
                     className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
@@ -149,12 +148,10 @@ export default function RegisterPage() {
                 />
             </div>
 
-            {/* Theme toggle */}
             <div className="absolute top-5 right-6 z-20">
                 <ThemeToggle />
             </div>
 
-            {/* Card */}
             <div
                 className="relative z-10 w-full max-w-md rounded-2xl shadow-2xl p-8 transition-colors duration-300"
                 style={{

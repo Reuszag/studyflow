@@ -194,7 +194,7 @@ export default function GPACalculator() {
     if (!hydrated) return null
 
     return (
-        <div className="flex-1 min-h-screen p-8" style={{ background: 'var(--background)' }}>
+        <div className="flex-1 min-h-screen p-4 sm:p-8" style={{ background: 'var(--background)' }}>
             <div className="max-w-3xl mx-auto flex flex-col gap-6">
 
                 {/* Header */}
@@ -351,7 +351,8 @@ export default function GPACalculator() {
                                 Clear all
                             </button>
                         </div>
-                        <table className="w-full text-sm">
+                        <div className="overflow-x-auto">
+                        <table className="w-full text-sm min-w-[480px]">
                             <thead>
                                 <tr style={{ borderBottom: '1px solid var(--card-border)' }}>
                                     <th className="text-left px-5 py-2.5 font-medium text-xs" style={{ color: 'var(--text-tertiary)' }}>Subject</th>
@@ -402,6 +403,7 @@ export default function GPACalculator() {
                                 </tfoot>
                             )}
                         </table>
+                        </div>
 
                         {/* Save calculation */}
                         <div className="px-5 py-4" style={{ borderTop: '1px solid var(--card-border)' }}>
@@ -509,8 +511,8 @@ export default function GPACalculator() {
                                         </div>
                                     </div>
                                     {expanded && (
-                                        <div style={{ borderTop: '1px solid var(--card-border)' }}>
-                                            <table className="w-full text-xs">
+                                        <div className="overflow-x-auto" style={{ borderTop: '1px solid var(--card-border)' }}>
+                                            <table className="w-full text-xs min-w-[400px]">
                                                 <thead>
                                                     <tr style={{ borderBottom: '1px solid var(--card-border)' }}>
                                                         <th className="text-left px-5 py-2 font-medium" style={{ color: 'var(--text-tertiary)' }}>Subject</th>

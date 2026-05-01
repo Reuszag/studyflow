@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
         }
 
-        // Verify user has edit access to this note (owner OR shared editor)
         const { data: noteRow } = await supabase
             .from('notes')
             .select('owner_id')
@@ -38,7 +37,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Note not found' }, { status: 404 })
         }
 
-        // Verify the claimed ownerId matches the actual note owner
         if (noteRow.owner_id !== ownerId) {
             return NextResponse.json({ error: 'Owner ID mismatch' }, { status: 400 })
         }
@@ -57,7 +55,6 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Upload the file under the note owner's storage folder
         const timestamp = Date.now()
         const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
         const filePath = `${ownerId}/${timestamp}_${safeName}`
@@ -78,7 +75,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 })
         }
 
-        // Return the proxy URL so all viewers can load the image
         const proxyUrl = `/api/note-image?path=${encodeURIComponent(filePath)}&noteId=${noteId}`
         return NextResponse.json({ url: proxyUrl })
     } catch (err) {

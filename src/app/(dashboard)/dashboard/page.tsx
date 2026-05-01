@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import StudyTipCard from './StudyTipCard'
+import RecentActivityClient from './RecentActivityClient'
 
 // Premium SVG Icons
 const Icons = {
@@ -24,6 +26,9 @@ const Icons = {
     ),
     Clock: () => (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 15 15"/></svg>
+    ),
+    Brain: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v2H5a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h2v2a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-2h2a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-2V5a3 3 0 0 0-3-3z"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/></svg>
     ),
     Flame: () => (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
@@ -70,29 +75,19 @@ export default async function DashboardPage() {
         .select('id, status')
         .eq('user_id', user.id)
     
-    const pendingTasksCount = tasks?.filter(t => t.status !== 'completed').length || 0
-    const completedTasksCount = tasks?.filter(t => t.status === 'completed').length || 0
-    const totalTasks = tasks?.length || 0
+    const activeTasks = tasks?.filter(t => t.status !== 'archived') || []
+    const pendingTasksCount = activeTasks.filter(t => t.status !== 'completed').length || 0
+    const completedTasksCount = activeTasks.filter(t => t.status === 'completed').length || 0
+    const totalTasks = activeTasks.length || 0
     const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0
 
-    // 3. Focus Sessions
-    const { data: sessions } = await supabase
-        .from('pomodoro_sessions')
-        .select('duration_minutes, completed, session_type')
-        .eq('user_id', user.id)
-        .eq('session_type', 'focus')
-        .eq('completed', true)
-
-    const totalFocusMinutes = sessions?.reduce((acc, s) => acc + (s.duration_minutes || 0), 0) || 0
-    const totalFocusHours = (totalFocusMinutes / 60).toFixed(1)
-
-    // 4. Notes
+    // 3. Notes
     const { count: notesCount } = await supabase
         .from('notes')
         .select('*', { count: 'exact', head: true })
         .eq('owner_id', user.id)
 
-    // 5. Storage
+    // 4. Storage
     const { data: docs } = await supabase
         .from('documents')
         .select('file_size')
@@ -101,26 +96,29 @@ export default async function DashboardPage() {
     const totalStorageBytes = docs?.reduce((acc, d) => acc + (Number(d.file_size) || 0), 0) || 0
     const storageFormatted = formatBytes(totalStorageBytes)
 
-    // 6. Recent Activity (Simplified unified feed)
-    const { data: recentTasks } = await supabase.from('tasks').select('title, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(3)
-    const { data: recentDocs } = await supabase.from('documents').select('file_name, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(3)
-    
-    const activityFeed = [
-        ...(recentTasks?.map(t => ({ title: `Task: ${t.title}`, time: new Date(t.created_at).toLocaleDateString(), icon: Icons.Tasks, color: 'text-blue-400' })) || []),
-        ...(recentDocs?.map(d => ({ title: `Doc: ${d.file_name}`, time: new Date(d.created_at).toLocaleDateString(), icon: Icons.Storage, color: 'text-emerald-400' })) || [])
-    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 3)
+    // 5. GPA Target (20% more than last saved calculation)
+    const { data: lastGpaCalc } = await supabase
+        .from('gpa_calculations')
+        .select('gpa')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+    let gpaTarget = '—'
+    if (lastGpaCalc?.gpa) {
+        const newTarget = (lastGpaCalc.gpa * 1.2).toFixed(2)
+        gpaTarget = parseFloat(newTarget) > 5.0 ? '5.0' : newTarget
+    }
 
     return (
-        <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10">
+        <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto space-y-10">
             {/* Top Bar / Greeting */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'var(--heading-text)' }}>
                         Welcome back, <span className="text-violet-400">{displayName}</span>
                     </h1>
-                    <p className="text-sm font-medium" style={{ color: 'var(--muted-text)' }}>
-                        You have <span className="text-violet-400">{pendingTasksCount} tasks</span> pending for today.
-                    </p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -138,10 +136,10 @@ export default async function DashboardPage() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Study Streak', value: '—', icon: Icons.Flame, color: 'text-orange-400', bg: 'rgba(251, 146, 60, 0.1)' },
-                    { label: 'Focus Time', value: `${totalFocusHours}h`, icon: Icons.Clock, color: 'text-blue-400', bg: 'rgba(96, 165, 250, 0.1)' },
-                    { label: 'Tasks Done', value: `${taskCompletionRate}%`, icon: Icons.Tasks, color: 'text-emerald-400', bg: 'rgba(52, 211, 153, 0.1)' },
-                    { label: 'GPA Target', value: '3.8', icon: Icons.GPA, color: 'text-violet-400', bg: 'rgba(167, 139, 250, 0.1)' },
+                    { label: 'Study Notes', value: notesCount || 0, icon: Icons.Notes, color: 'text-violet-400', bg: 'rgba(139, 92, 246, 0.1)', desc: '' },
+                    { label: 'Cloud Storage', value: storageFormatted, icon: Icons.Storage, color: 'text-emerald-400', bg: 'rgba(52, 211, 153, 0.1)', desc: '' },
+                    { label: 'Tasks Done', value: `${taskCompletionRate}%`, icon: Icons.Tasks, color: 'text-emerald-400', bg: 'rgba(52, 211, 153, 0.1)', desc: '' },
+                    { label: 'GPA Target', value: gpaTarget, icon: Icons.GPA, color: 'text-violet-400', bg: 'rgba(167, 139, 250, 0.1)', desc: '' },
                 ].map((stat, i) => (
                     <div
                         key={i}
@@ -153,14 +151,15 @@ export default async function DashboardPage() {
                     >
                         <div className="flex items-center justify-between mb-3">
                             <div 
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}
-                                style={{ background: stat.bg }}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center border ${stat.color}`}
+                                style={{ background: stat.bg, borderColor: 'var(--active-nav-border)' }}
                             >
                                 <stat.icon />
                             </div>
                         </div>
                         <div className="text-2xl font-bold tracking-tight mb-1" style={{ color: 'var(--heading-text)' }}>{stat.value}</div>
                         <div className="text-xs font-medium uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>{stat.label}</div>
+                        {stat.desc && <div className="text-[10px] mt-1" style={{ color: 'var(--muted-text)' }}>{stat.desc}</div>}
                     </div>
                 ))}
             </div>
@@ -207,7 +206,7 @@ export default async function DashboardPage() {
                                     href: '/dashboard/gpa', 
                                     icon: Icons.GPA, 
                                     accent: '#f43f5e',
-                                    stats: 'Active'
+                                    stats: '-'
                                 },
                             ].map((card, i) => (
                                 <Link
@@ -222,16 +221,13 @@ export default async function DashboardPage() {
                                     <div className="flex items-start gap-5">
                                         <div 
                                             className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner group-hover:rotate-6 transition-transform"
-                                            style={{ background: 'var(--hover-overlay)', color: card.accent, border: '1px solid var(--card-border)' }}
+                                            style={{ background: 'var(--hover-overlay)', color: card.accent, border: '1px solid var(--active-nav-border)' }}
                                         >
                                             <card.icon />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-1">
+                                            <div className="mb-1">
                                                 <h3 className="font-bold text-base truncate" style={{ color: 'var(--heading-text)' }}>{card.title}</h3>
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter" style={{ background: 'var(--hover-overlay)', color: 'var(--muted-text)' }}>
-                                                    {card.stats}
-                                                </span>
                                             </div>
                                             <p className="text-sm line-clamp-2" style={{ color: 'var(--muted-text)' }}>{card.desc}</p>
                                         </div>
@@ -243,24 +239,24 @@ export default async function DashboardPage() {
 
                     {/* Progress Visualization Placeholder */}
                     <section className="p-8 rounded-3xl border relative overflow-hidden group" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:bg-violet-500/10 transition-all duration-700"></div>
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:bg-cyan-500/10 transition-all duration-700"></div>
                         
                         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                             <div>
-                                <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--heading-text)' }}>Academic Performance</h3>
+                                <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--heading-text)' }}>AI-Powered Learning</h3>
                                 <p className="text-sm max-w-sm" style={{ color: 'var(--muted-text)' }}>
-                                    Your focus sessions totaled <span className="text-emerald-400 font-bold">{totalFocusMinutes} minutes</span> this period. Keep it up!
+                                    Leverage our <span className="text-cyan-400 font-bold">AI summarization feature</span> to transform your study notes into concise summaries and study smarter.
                                 </p>
                             </div>
                             <div className="flex gap-4">
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-violet-400">{totalFocusHours}</div>
-                                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>Focus Hours</div>
+                                    <div className="text-2xl font-bold text-cyan-400">✨</div>
+                                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>Smart Summary</div>
                                 </div>
                                 <div className="w-[1px] h-10 bg-white/10 self-center"></div>
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-emerald-400">{taskCompletionRate}%</div>
-                                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>Tasks Done</div>
+                                    <div className="text-2xl font-bold text-cyan-400">⚡</div>
+                                    <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>Instant Results</div>
                                 </div>
                             </div>
                         </div>
@@ -270,45 +266,10 @@ export default async function DashboardPage() {
                 {/* Sidebar Column (Right) */}
                 <div className="lg:col-span-4 space-y-8">
                     {/* Activity Feed */}
-                    <section className="p-6 rounded-2xl border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
-                        <h3 className="font-bold text-sm uppercase tracking-widest mb-6" style={{ color: 'var(--muted-text)' }}>Recent Activity</h3>
-                        <div className="space-y-6">
-                            {activityFeed.length > 0 ? activityFeed.map((item, i) => (
-                                <div key={i} className="flex gap-4 group cursor-pointer">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.color}`} style={{ background: 'var(--hover-overlay)' }}>
-                                        <item.icon />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-semibold truncate group-hover:text-violet-400 transition-colors" style={{ color: 'var(--heading-text)' }}>{item.title}</p>
-                                        <p className="text-[11px]" style={{ color: 'var(--muted-text)' }}>{item.time}</p>
-                                    </div>
-                                </div>
-                            )) : (
-                                <p className="text-xs" style={{ color: 'var(--muted-text)' }}>No recent activity found.</p>
-                            )}
-                        </div>
-                        <Link 
-                            href="/dashboard/tasks"
-                            className="w-full mt-8 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-violet-500/10 hover:border-violet-500/30 flex items-center justify-center gap-2" 
-                            style={{ color: 'var(--muted-text)', border: '1px dashed var(--card-border)' }}
-                        >
-                            View All History <Icons.ArrowRight />
-                        </Link>
-                    </section>
+                    <RecentActivityClient />
 
                     {/* Pro Tip Card */}
-                    <div className="p-6 rounded-2xl border bg-violet-600/5 border-violet-500/20">
-                        <div className="flex items-center gap-2 mb-3 text-violet-400">
-                            <Icons.Flame />
-                            <span className="text-xs font-bold uppercase tracking-widest">Study Tip</span>
-                        </div>
-                        <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--body-text)' }}>
-                            &quot;Take a 5-minute break every 25 minutes to keep your brain fresh and maintain high levels of focus.&quot;
-                        </p>
-                        <Link href="/dashboard/focus" className="text-xs font-bold text-violet-400 hover:underline flex items-center gap-1">
-                            Set up intervals <Icons.ArrowRight />
-                        </Link>
-                    </div>
+                    <StudyTipCard />
                 </div>
 
             </div>

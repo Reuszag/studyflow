@@ -19,6 +19,13 @@ export async function POST(req: NextRequest) {
 
     if (!doc) return NextResponse.json({ error: 'File not found or access denied' }, { status: 403 })
 
+    // Quick early validation: only allow PDF and Word documents
+    const isPdf = fileType?.includes('pdf') || fileName?.toLowerCase().endsWith('.pdf')
+    const isWord = fileType?.includes('wordprocessingml') || fileType?.includes('msword') || fileName?.toLowerCase().endsWith('.docx') || fileName?.toLowerCase().endsWith('.doc')
+    if (!isPdf && !isWord) {
+        return NextResponse.json({ error: 'Unsupported file type. Only PDF and Word documents can be summarized.' }, { status: 400 })
+    }
+
     const { data: fileData, error: downloadError } = await supabase.storage
         .from('documents')
         .download(filePath)
@@ -106,130 +113,121 @@ ${extractedText}`
         return NextResponse.json({ error: 'AI summarization failed. Check your API key.' }, { status: 500 })
     }
 
-    // Build summary filename
-    const baseName = fileName.replace(/\.[^/.]+$/, '')
-    const summaryFileName = `${baseName}_summarized.pdf`
-    const timestamp = Date.now()
-    const safeName = summaryFileName.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const summaryFilePath = `${user.id}/${timestamp}_${safeName}`
+        const baseName = fileName.replace(/\.[^/.]+$/, '')
+        const summaryFileName = `${baseName}_summarized.pdf`
+        const timestamp = Date.now()
+        const safeName = summaryFileName.replace(/[^a-zA-Z0-9.-]/g, '_')
+        const summaryFilePath = `${user.id}/${timestamp}_${safeName}`
 
-    // Generate PDF using jsPDF
-    let pdfBuffer: Buffer
-    try {
-        const { jsPDF } = await import('jspdf')
-        const doc = new jsPDF()
-        const margin = 20
-        const pageWidth = doc.internal.pageSize.width
-        const contentWidth = pageWidth - (margin * 2)
-        const pageHeight = doc.internal.pageSize.height
-        
-        let cursorY = 25
-        
-        const checkPage = (heightNeeded: number) => {
-            if (cursorY + heightNeeded > pageHeight - 20) {
-                doc.addPage()
-                cursorY = 20
-            }
-        }
-
-        // Helper to sanitize text for standard PDF fonts (Latin-1 / WinAnsi)
-        const sanitize = (text: string) => {
-            if (!text) return ''
+        let pdfBuffer: Buffer
+        try {
+            const { jsPDF } = await import('jspdf')
+            const doc = new jsPDF()
+            const margin = 20
+            const pageWidth = doc.internal.pageSize.width
+            const contentWidth = pageWidth - (margin * 2)
+            const pageHeight = doc.internal.pageSize.height
             
-            // Map specific characters to their best visual matches in the PDF set
-            const specialMap: Record<string, string> = {
-                'ő': 'ö', 'Ő': 'Ö',
-                'ű': 'ü', 'Ű': 'Ü',
-                '—': '-', '–': '-'
+            let cursorY = 25
+            
+            const checkPage = (heightNeeded: number) => {
+                if (cursorY + heightNeeded > pageHeight - 20) {
+                    doc.addPage()
+                    cursorY = 20
+                }
+            }
+
+            // Helper to sanitize text for standard PDF fonts (Latin-1 / WinAnsi)
+            const sanitize = (text: string) => {
+                if (!text) return ''
+                
+                // Map specific characters to their best visual matches in the PDF set
+                const specialMap: Record<string, string> = {
+                    'ő': 'ö', 'Ő': 'Ö',
+                    'ű': 'ü', 'Ű': 'Ü',
+                    '—': '-', '–': '-'
+                }
+                
+                let t = text.replace(/\*\*/g, '')
+                for (const [key, val] of Object.entries(specialMap)) {
+                    t = t.replace(new RegExp(key, 'g'), val)
+                }
+
+                // High-fidelity fallback: keep Latin-1, normalize others
+                return t.split('').map(char => {
+                    const code = char.charCodeAt(0)
+                    if (code <= 255) return char
+                    return char.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                }).join('').replace(/[^\x00-\xFF]/g, '?')
+            }
+
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(22)
+            doc.setTextColor(124, 58, 237) // Violet 600
+            doc.text('Master Study Guide', margin, cursorY)
+            cursorY += 12
+            
+            doc.setFontSize(10)
+            doc.setFont('helvetica', 'normal')
+            doc.setTextColor(100, 116, 139) // Slate 500
+            doc.text(`Source: ${sanitize(fileName)}`, margin, cursorY)
+            doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth - margin - 45, cursorY)
+            cursorY += 8
+            
+            doc.setDrawColor(226, 232, 240) // Slate 200
+            doc.line(margin, cursorY, pageWidth - margin, cursorY)
+            cursorY += 15
+
+            const lines = summary.split('\n')
+            doc.setTextColor(30, 41, 59) // Slate 800
+
+            for (let line of lines) {
+                line = line.trim()
+                if (!line) {
+                    cursorY += 5
+                    continue
+                }
+
+                if (line.startsWith('##')) {
+                    checkPage(15)
+                    cursorY += 5
+                    doc.setFont('helvetica', 'bold')
+                    doc.setFontSize(14)
+                    doc.setTextColor(124, 58, 237)
+                    const cleanHeader = sanitize(line.replace(/^##\s*/, '')).toUpperCase()
+                    doc.text(cleanHeader, margin, cursorY)
+                    cursorY += 8
+                    doc.setFont('helvetica', 'normal')
+                    doc.setFontSize(11)
+                    doc.setTextColor(30, 41, 59)
+                } else if (line.startsWith('#')) {
+                    checkPage(12)
+                    doc.setFont('helvetica', 'bold')
+                    doc.setFontSize(12)
+                    doc.text(sanitize(line.replace(/^#\s*/, '')), margin, cursorY)
+                    cursorY += 7
+                    doc.setFont('helvetica', 'normal')
+                    doc.setFontSize(11)
+                } else if (line.startsWith('-') || line.startsWith('*')) {
+                    const bulletText = sanitize(line.replace(/^[-*]\s*/, ''))
+                    const splitBullet = doc.splitTextToSize(`•  ${bulletText}`, contentWidth - 5)
+                    checkPage(splitBullet.length * 6)
+                    doc.text(splitBullet, margin + 5, cursorY)
+                    cursorY += (splitBullet.length * 6)
+                } else {
+                    const splitParagraph = doc.splitTextToSize(sanitize(line), contentWidth)
+                    checkPage(splitParagraph.length * 6)
+                    doc.text(splitParagraph, margin, cursorY)
+                    cursorY += (splitParagraph.length * 6)
+                }
             }
             
-            let t = text.replace(/\*\*/g, '')
-            for (const [key, val] of Object.entries(specialMap)) {
-                t = t.replace(new RegExp(key, 'g'), val)
-            }
-
-            // High-fidelity fallback: keep Latin-1, normalize others
-            return t.split('').map(char => {
-                const code = char.charCodeAt(0)
-                if (code <= 255) return char
-                return char.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-            }).join('').replace(/[^\x00-\xFF]/g, '?')
+            const pdfArrayBuffer = doc.output('arraybuffer')
+            pdfBuffer = Buffer.from(pdfArrayBuffer)
+        } catch (err) {
+            console.error('PDF generation error:', err)
+            pdfBuffer = Buffer.from(summary, 'utf-8')
         }
-
-        // Title Header
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(22)
-        doc.setTextColor(124, 58, 237) // Violet 600
-        doc.text('Master Study Guide', margin, cursorY)
-        cursorY += 12
-        
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(100, 116, 139) // Slate 500
-        doc.text(`Source: ${sanitize(fileName)}`, margin, cursorY)
-        doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth - margin - 45, cursorY)
-        cursorY += 8
-        
-        doc.setDrawColor(226, 232, 240) // Slate 200
-        doc.line(margin, cursorY, pageWidth - margin, cursorY)
-        cursorY += 15
-
-        // Parse summary for simple markdown-like formatting
-        const lines = summary.split('\n')
-        doc.setTextColor(30, 41, 59) // Slate 800
-
-        for (let line of lines) {
-            line = line.trim()
-            if (!line) {
-                cursorY += 5
-                continue
-            }
-
-            if (line.startsWith('##')) {
-                // Main Section Header
-                checkPage(15)
-                cursorY += 5
-                doc.setFont('helvetica', 'bold')
-                doc.setFontSize(14)
-                doc.setTextColor(124, 58, 237)
-                const cleanHeader = sanitize(line.replace(/^##\s*/, '')).toUpperCase()
-                doc.text(cleanHeader, margin, cursorY)
-                cursorY += 8
-                doc.setFont('helvetica', 'normal')
-                doc.setFontSize(11)
-                doc.setTextColor(30, 41, 59)
-            } else if (line.startsWith('#')) {
-                // Secondary Header
-                checkPage(12)
-                doc.setFont('helvetica', 'bold')
-                doc.setFontSize(12)
-                doc.text(sanitize(line.replace(/^#\s*/, '')), margin, cursorY)
-                cursorY += 7
-                doc.setFont('helvetica', 'normal')
-                doc.setFontSize(11)
-            } else if (line.startsWith('-') || line.startsWith('*')) {
-                // Bullet point
-                const bulletText = sanitize(line.replace(/^[-*]\s*/, ''))
-                const splitBullet = doc.splitTextToSize(`•  ${bulletText}`, contentWidth - 5)
-                checkPage(splitBullet.length * 6)
-                doc.text(splitBullet, margin + 5, cursorY)
-                cursorY += (splitBullet.length * 6)
-            } else {
-                // Standard paragraph
-                const splitParagraph = doc.splitTextToSize(sanitize(line), contentWidth)
-                checkPage(splitParagraph.length * 6)
-                doc.text(splitParagraph, margin, cursorY)
-                cursorY += (splitParagraph.length * 6)
-            }
-        }
-        
-        const pdfArrayBuffer = doc.output('arraybuffer')
-        pdfBuffer = Buffer.from(pdfArrayBuffer)
-    } catch (err) {
-        console.error('PDF generation error:', err)
-        // Fallback to text if PDF fails
-        pdfBuffer = Buffer.from(summary, 'utf-8')
-    }
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage

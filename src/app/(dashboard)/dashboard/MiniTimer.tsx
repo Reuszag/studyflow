@@ -22,7 +22,7 @@ export default function MiniTimer() {
     const router = useRouter()
     const { running, timeLeft, cfg, progress, mode, setRunning } = useTimer()
 
-    // Only show when timer is active (running or paused with time consumed) and NOT on the focus page
+
     const onFocusPage = pathname === '/dashboard/focus'
     const timerStarted = running || timeLeft < cfg.duration
     if (onFocusPage || !timerStarted) return null
