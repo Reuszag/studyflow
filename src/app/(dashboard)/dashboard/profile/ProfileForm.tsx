@@ -5,31 +5,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfile, deleteAvatar, changePassword } from './actions'
 
-const TIMEZONES = [
-    'UTC',
-    'Europe/London',
-    'Europe/Berlin',
-    'Europe/Paris',
-    'Europe/Istanbul',
-    'Europe/Moscow',
-    'Asia/Baku',
-    'Asia/Dubai',
-    'Asia/Kolkata',
-    'Asia/Shanghai',
-    'Asia/Tokyo',
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Los_Angeles',
-    'Australia/Sydney',
-]
-
 interface ProfileFormProps {
     profile: {
         id: string
         full_name: string | null
         avatar_url: string | null
-        timezone: string | null
         preferences: Record<string, unknown> | null
     }
     email: string
@@ -37,11 +17,9 @@ interface ProfileFormProps {
 
 export default function ProfileForm({ profile, email }: ProfileFormProps) {
     const initialFullName = profile.full_name || ''
-    const initialTimezone = profile.timezone || 'UTC'
     const initialAvatarUrl = profile.avatar_url || ''
 
     const [fullName, setFullName] = useState(initialFullName)
-    const [timezone, setTimezone] = useState(initialTimezone)
     const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl)
 
     const [saving, setSaving] = useState(false)
@@ -68,7 +46,7 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
     const menuRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
 
-    const hasChanges = fullName !== initialFullName || timezone !== initialTimezone
+    const hasChanges = fullName !== initialFullName
 
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
@@ -87,7 +65,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
         setError('')
         const formData = new FormData()
         formData.set('full_name', fullName)
-        formData.set('timezone', timezone)
         const result = await updateProfile(formData)
         if (result.error) {
             setError(result.error)
@@ -100,7 +77,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
 
     function handleCancel() {
         setFullName(initialFullName)
-        setTimezone(initialTimezone)
         setMessage('')
         setError('')
     }
@@ -359,23 +335,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
                         placeholder="Enter your full name"
                     />
-                </div>
-
-                {/* Timezone */}
-                <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Timezone</label>
-                    <select
-                        value={timezone}
-                        onChange={(e) => setTimezone(e.target.value)}
-                        className="w-full rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition"
-                        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
-                    >
-                        {TIMEZONES.map((tz) => (
-                            <option key={tz} value={tz} style={{ background: 'var(--card-bg-alt)' }}>
-                                {tz.replace(/_/g, ' ')}
-                            </option>
-                        ))}
-                    </select>
                 </div>
 
                 {/* Change Password */}

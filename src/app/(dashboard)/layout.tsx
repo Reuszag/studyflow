@@ -24,7 +24,7 @@ export default async function DashboardLayout({
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('timezone, avatar_url, full_name, email')
+        .select('avatar_url, full_name, email')
         .eq('id', user.id)
         .single()
 
@@ -36,7 +36,6 @@ export default async function DashboardLayout({
             .eq('id', user.id)
     }
 
-    const userTimezone = profile?.timezone || 'UTC'
     const avatarUrl = profile?.avatar_url || null
     const fullName = profile?.full_name || user.email?.split('@')[0] || 'Student'
 
@@ -60,7 +59,7 @@ export default async function DashboardLayout({
 
                     {/* Centered Clock */}
                     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <LiveClock timezone={userTimezone} />
+                        <LiveClock />
                     </div>
 
                     <div className="flex items-center gap-3">

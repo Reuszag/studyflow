@@ -24,8 +24,8 @@ export default async function TasksPage() {
         <div className="p-8 max-w-5xl mx-auto h-full flex flex-col">
             <div className="mb-8 flex items-center justify-between shrink-0">
                 <div>
-                    <h2 className="text-3xl font-bold text-white mb-1">Tasks</h2>
-                    <p className="text-gray-500">Manage your to-dos and assignments</p>
+                    <h2 className="text-3xl font-bold mb-1" style={{ color: 'var(--heading-text)' }}>Tasks</h2>
+                    <p style={{ color: 'var(--muted-text)' }}>Manage your to-dos and assignments</p>
                 </div>
             </div>
 

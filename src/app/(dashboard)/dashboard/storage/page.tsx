@@ -23,8 +23,8 @@ export default async function StoragePage() {
         <div className="p-8 max-w-5xl mx-auto h-full flex flex-col">
             <div className="mb-8 flex items-center justify-between shrink-0">
                 <div>
-                    <h2 className="text-3xl font-bold text-white mb-1">Storage</h2>
-                    <p className="text-gray-500">Securely store and access your personal documents</p>
+                    <h2 className="text-3xl font-bold mb-1" style={{ color: 'var(--heading-text)' }}>Storage</h2>
+                    <p style={{ color: 'var(--muted-text)' }}>Securely store and access your personal documents</p>
                 </div>
             </div>
 

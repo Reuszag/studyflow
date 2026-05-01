@@ -111,10 +111,6 @@ export default function LandingPage() {
                 </div>
             </main>
 
-            {/* Simple Footer */}
-            <footer className="px-6 py-12 text-center max-w-6xl mx-auto w-full mt-auto opacity-50 text-xs font-medium uppercase tracking-widest" style={{ color: 'var(--muted-text)' }}>
-                &copy; 2026 StudyFlow &mdash; Academic workspace
-            </footer>
         </div>
     )
 }

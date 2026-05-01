@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react'
 
-export default function LiveClock({ timezone }: { timezone: string }) {
+export default function LiveClock() {
     const [time, setTime] = useState('')
 
     useEffect(() => {
         function updateTime() {
             const now = new Date()
             const formatted = now.toLocaleTimeString('en-GB', {
-                timeZone: timezone,
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
@@ -20,7 +19,7 @@ export default function LiveClock({ timezone }: { timezone: string }) {
         updateTime()
         const interval = setInterval(updateTime, 1000)
         return () => clearInterval(interval)
-    }, [timezone])
+    }, [])
 
     return (
         <span
