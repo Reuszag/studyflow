@@ -172,6 +172,12 @@ export default function LoginPage() {
                     </button>
                 </form>
 
+                <div className="mt-3 text-center">
+                    <Link href="/forgot-password" className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
+                        Forgot password?
+                    </Link>
+                </div>
+
                 <p className="text-center text-sm mt-6" style={{ color: 'var(--muted-text)' }}>
                     Don&apos;t have an account?{' '}
                     <Link

@@ -19,6 +19,13 @@ export async function POST(req: NextRequest) {
 
     if (!doc) return NextResponse.json({ error: 'File not found or access denied' }, { status: 403 })
 
+    // Quick early validation: only allow PDF and Word documents
+    const isPdf = fileType?.includes('pdf') || fileName?.toLowerCase().endsWith('.pdf')
+    const isWord = fileType?.includes('wordprocessingml') || fileType?.includes('msword') || fileName?.toLowerCase().endsWith('.docx') || fileName?.toLowerCase().endsWith('.doc')
+    if (!isPdf && !isWord) {
+        return NextResponse.json({ error: 'Unsupported file type. Only PDF and Word documents can be summarized.' }, { status: 400 })
+    }
+
     const { data: fileData, error: downloadError } = await supabase.storage
         .from('documents')
         .download(filePath)

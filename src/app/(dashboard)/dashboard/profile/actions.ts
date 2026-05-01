@@ -40,15 +40,20 @@ export async function updateProfile(formData: FormData) {
     }
 
     const fullName = formData.get('full_name') as string
-    const timezone = formData.get('timezone') as string
+    const timezone = formData.get('timezone') as string | null
+
+    const updatePayload: Record<string, unknown> = {
+        full_name: fullName,
+        updated_at: new Date().toISOString(),
+    }
+
+    if (timezone) {
+        updatePayload.timezone = timezone
+    }
 
     const { error } = await supabase
         .from('profiles')
-        .update({
-            full_name: fullName,
-            timezone: timezone,
-            updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', user.id)
 
     if (error) {

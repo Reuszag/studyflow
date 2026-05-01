@@ -30,6 +30,9 @@ export default function TableControls({
     const [dragOverColIdx, setDragOverColIdx] = useState<number | null>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [isTableMoveDragging, setIsTableMoveDragging] = useState(false)
+    const [hideRowSelectionMarkers, setHideRowSelectionMarkers] = useState(false)
+    const [selectedTable, setSelectedTable] = useState(false)
+    const [deleteTableBtnPos, setDeleteTableBtnPos] = useState<{ top: number; left: number } | null>(null)
     const [tooltip, setTooltip] = useState<Tooltip | null>(null)
     const [tableMoveHandle, setTableMoveHandle] = useState<TableMoveHandle | null>(null)
     const [, forceUpdate] = useState(0)
@@ -41,6 +44,7 @@ export default function TableControls({
     const dragColFromRef = useRef<number | null>(null)
     const dragColOverRef = useRef<number | null>(null)
     const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const rowMarkerRestoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const overControlsRef = useRef(false)
 
     const getContainerRect = useCallback(() => {
@@ -64,6 +68,8 @@ export default function TableControls({
         setColCtrl(null)
         setTooltip(null)
         setTableMoveHandle(null)
+        setSelectedTable(false)
+        setDeleteTableBtnPos(null)
     }, [])
 
     const cachePmTable = useCallback((tableEl: HTMLTableElement) => {
@@ -225,6 +231,15 @@ export default function TableControls({
         e.preventDefault()
         e.stopPropagation()
         setTooltip(null)
+        setHideRowSelectionMarkers(true)
+        if (rowMarkerRestoreTimerRef.current) {
+            clearTimeout(rowMarkerRestoreTimerRef.current)
+            rowMarkerRestoreTimerRef.current = null
+        }
+
+        // If a table was selected (showing delete UI), clear it because we're beginning a move
+        setSelectedTable(false)
+        setDeleteTableBtnPos(null)
 
         const stored = tablePmRef.current
         if (!stored || !editor) return
@@ -315,6 +330,117 @@ export default function TableControls({
                 tr.setNodeMarkup(s.pos, undefined, { ...node.attrs, posX: Math.round(finalX), posY: Math.round(finalY) })
                 editor.view.dispatch(tr)
             } catch {}
+
+            // Clear any selected-table state (drag concluded) and refresh cached DOM/controls
+            try {
+                setSelectedTable(false)
+                setDeleteTableBtnPos(null)
+                // Give the DOM a tick and then refresh cached table info and controls
+                requestAnimationFrame(() => {
+                    const t = tableElRef.current
+                    if (t) {
+                        cachePmTable(t)
+                        const rows = t.querySelectorAll('tr')
+                        const tr = (rows[rowCtrl?.idx] as HTMLTableRowElement | undefined) ?? null
+                        const firstRow = t.querySelector('tr') as HTMLTableRowElement | null
+                        const cell = (firstRow && colCtrl != null) ? (firstRow.cells[colCtrl.idx] as HTMLElement | undefined) ?? null : null
+                        recalc(t, tr, cell)
+                        // Ensure UI (selected-row boxes, controls) recalculates positions
+                        try { forceUpdate(n => n + 1) } catch {}
+                        // Keep markers hidden for a few frames so the layout settles before re-showing them.
+                        let frames = 0
+                        const restore = () => {
+                            frames += 1
+                            try { forceUpdate(n => n + 1) } catch {}
+                            if (frames < 3) {
+                                requestAnimationFrame(restore)
+                                return
+                            }
+                            rowMarkerRestoreTimerRef.current = setTimeout(() => {
+                                setHideRowSelectionMarkers(false)
+                                try { forceUpdate(n => n + 1) } catch {}
+                            }, 16)
+                        }
+                        requestAnimationFrame(restore)
+                    }
+                })
+            } catch {}
+        }
+
+        document.addEventListener('pointermove', onMove)
+        document.addEventListener('pointerup', onUp)
+        document.addEventListener('pointercancel', onUp)
+    }
+
+    function selectTable() {
+        const tableEl = tableElRef.current
+        if (!tableEl) return
+        const wrapper = (tableEl.closest('.tableWrapper') as HTMLElement) ?? tableEl
+        const wr = wrapper.getBoundingClientRect()
+        const containerRect = getContainerRect()
+        const buttonWidth = 96
+        const lastRow = tableEl.querySelector('tr:last-child') as HTMLTableRowElement | null
+        const lastCell = lastRow?.cells?.[lastRow.cells.length - 1] as HTMLElement | undefined
+        const lastCellRect = lastCell?.getBoundingClientRect()
+        const top = (lastCellRect?.bottom ?? wr.bottom) + 8
+        const rawLeft = lastCellRect?.left ?? (wr.right - buttonWidth)
+        const left = Math.min(
+            Math.max(rawLeft, (containerRect?.left ?? 0) + 4),
+            (containerRect?.right ?? window.innerWidth) - buttonWidth - 4,
+        )
+        setSelectedTable(true)
+        setDeleteTableBtnPos({ top, left })
+        // ensure table pm cache is up to date
+        cachePmTable(tableEl)
+        // also move editor selection into the first cell of the table so commands like deleteTable() work
+        try {
+            if (editor) {
+                const firstCell = tableEl.querySelector('td,th') as HTMLElement | null
+                if (firstCell) {
+                    const pos = editor.view.posAtDOM(firstCell, 0)
+                    editor.chain().focus().setTextSelection(pos).run()
+                }
+            }
+        } catch {}
+    }
+
+    function onTableHandlePointerDown(e: React.PointerEvent) {
+        e.preventDefault()
+        e.stopPropagation()
+        setTooltip(null)
+
+        let moved = false
+        const startX = e.clientX
+        const startY = e.clientY
+
+        function onMove(ev: PointerEvent) {
+            const dx = ev.clientX - startX
+            const dy = ev.clientY - startY
+            if (Math.hypot(dx, dy) > 6) {
+                moved = true
+                // Begin actual table move using the current live PointerEvent to avoid position jump
+                try {
+                    startTableMoveDrag(ev as unknown as React.PointerEvent)
+                } catch {
+                    // fallback to original event if something goes wrong
+                    startTableMoveDrag(e)
+                }
+                cleanup()
+            }
+        }
+
+        function onUp() {
+            cleanup()
+            if (!moved) {
+                // treat as click: select whole table and show delete button
+                selectTable()
+            }
+        }
+
+        function cleanup() {
+            document.removeEventListener('pointermove', onMove)
+            document.removeEventListener('pointerup', onUp)
+            document.removeEventListener('pointercancel', onUp)
         }
 
         document.addEventListener('pointermove', onMove)
@@ -825,7 +951,7 @@ export default function TableControls({
     }
 
     // Selected row checkbox positions (computed at render — position:fixed tracks viewport)
-    const selectedRowRects = Array.from(selectedRows).map(idx => {
+    const selectedRowRects = hideRowSelectionMarkers ? [] : Array.from(selectedRows).map(idx => {
         const tableEl = tableElRef.current
         if (!tableEl) return null
         const tr = tableEl.querySelectorAll('tr')[idx] as HTMLTableRowElement | undefined
@@ -930,7 +1056,7 @@ export default function TableControls({
                 <div
                     data-tbl-ctrl="1"
                     {...ctrlHandlers}
-                    onPointerDown={startTableMoveDrag}
+                    onPointerDown={onTableHandlePointerDown}
                     onMouseEnter={(e) => {
                         ctrlHandlers.onMouseEnter()
                         setTooltip({ x: e.clientX, y: e.clientY, lines: ['Drag to move table'] })
@@ -1258,6 +1384,40 @@ export default function TableControls({
                     }}
                 >
                     Delete {selectedRows.size} row{selectedRows.size > 1 ? 's' : ''}
+                </button>
+            )}
+
+            {/* Delete whole table button when table is selected via move-handle click */}
+            {selectedTable && deleteTableBtnPos && (
+                <button
+                    data-tbl-ctrl="1"
+                    {...ctrlHandlers}
+                    onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        try {
+                            // deleteTable requires the selection to be inside the table; selectTable() already does that
+                            editor?.chain().focus().deleteTable().run()
+                        } catch {}
+                        setSelectedTable(false)
+                        setDeleteTableBtnPos(null)
+                    }}
+                    style={{
+                        position: 'fixed',
+                        top: deleteTableBtnPos.top,
+                        left: deleteTableBtnPos.left,
+                        zIndex: 9999,
+                        padding: '6px 16px',
+                        borderRadius: 8,
+                        background: 'rgba(239,68,68,0.12)',
+                        border: '1px solid rgba(239,68,68,0.25)',
+                        color: '#f87171',
+                        fontSize: 13, fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    }}
+                >
+                    Delete table
                 </button>
             )}
 
