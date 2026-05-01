@@ -50,7 +50,7 @@ export default function Sidebar() {
     const pathname = usePathname()
     const [collapsed, setCollapsed] = React.useState(false)
 
-    // Load preference from localStorage
+
     React.useEffect(() => {
         const saved = localStorage.getItem('sidebar-collapsed')
         if (saved !== null) {

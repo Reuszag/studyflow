@@ -79,7 +79,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     const cfg = modes[mode]
     const progress = timeLeft / cfg.duration
 
-    // Load saved settings on mount
     useEffect(() => {
         setMounted(true)
         const saved = localStorage.getItem('studyflow_timer_settings')
@@ -91,12 +90,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
                     setTimeLeft(parsed.pomodoro.duration)
                 }
             } catch {
-                // Ignore parse errors
             }
         }
     }, [])
 
-    // Update document title while running
     useEffect(() => {
         if (!mounted) return
         const formatTime = (seconds: number) => {
@@ -134,7 +131,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         setRunning(false)
     }, [modes])
 
-    // Timer tick
     useEffect(() => {
         if (running) {
             intervalRef.current = setInterval(() => {

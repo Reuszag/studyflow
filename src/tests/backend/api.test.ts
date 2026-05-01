@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// ─── Mock Next.js modules ─────────────────────────────────────────────────────
 vi.mock('next/headers', () => ({
     cookies: vi.fn().mockResolvedValue({
         getAll: vi.fn().mockReturnValue([]),
@@ -17,11 +16,9 @@ vi.mock('@/lib/supabase/server', () => ({
     createClient: vi.fn(),
 }))
 
-// ─── Mock global fetch ────────────────────────────────────────────────────────
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
-// ─── Supabase mock factory ────────────────────────────────────────────────────
 function makeSupabase(overrides = {}) {
     const chain = (result = { data: null, error: null }) => {
         const obj = {}
@@ -63,7 +60,6 @@ function makeSupabase(overrides = {}) {
     }
 }
 
-// ─── Helper: build a NextRequest-like object ──────────────────────────────────
 function makeRequest(method, url, body = null, formData = null) {
     const req = {
         method,
@@ -74,7 +70,6 @@ function makeRequest(method, url, body = null, formData = null) {
     return req
 }
 
-// ─── /api/save-note ───────────────────────────────────────────────────────────
 describe('/api/save-note POST', () => {
     let mockSupabase
     let POST
@@ -139,10 +134,8 @@ describe('/api/save-note POST', () => {
             const methods = ['select', 'eq', 'single', 'update', 'insert']
             for (const m of methods) obj[m] = vi.fn(() => obj)
             if (callCount === 1) {
-                // fetch note owner
                 obj.single = vi.fn().mockResolvedValue({ data: { owner_id: 'user-123' }, error: null })
             } else {
-                // update note — returns rows
                 obj.select = vi.fn(() => obj)
                 obj.then = (resolve) => resolve({ data: [{ id: 'n1' }], error: null })
                 obj.single = vi.fn().mockResolvedValue({ data: [{ id: 'n1' }], error: null })
@@ -168,7 +161,6 @@ describe('/api/save-note POST', () => {
     })
 })
 
-// ─── /api/note-image ──────────────────────────────────────────────────────────
 describe('/api/note-image GET', () => {
     let mockSupabase
     let GET
@@ -248,10 +240,8 @@ describe('/api/note-image GET', () => {
         obj.single = vi.fn().mockResolvedValue({ data: { id: 'n1' }, error: null })
         mockSupabase.from = vi.fn(() => obj)
 
-        // Public fetch fails
         mockFetch
             .mockResolvedValueOnce({ ok: false })
-            // Signed URL fetch succeeds
             .mockResolvedValueOnce({
                 ok: true,
                 arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
@@ -298,7 +288,7 @@ describe('/api/note-image GET', () => {
         mockFetch.mockResolvedValue({
             ok: true,
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(4)),
-            headers: { get: vi.fn().mockReturnValue(null) }, // no content-type header
+            headers: { get: vi.fn().mockReturnValue(null) },
         })
 
         const req = makeRequest('GET', 'http://localhost/api/note-image?path=user-123/drawing.png&noteId=n1')
@@ -322,14 +312,12 @@ describe('/api/note-image GET', () => {
         const req = makeRequest('GET', 'http://localhost/api/note-image?path=user-123%2Fimg.jpg&noteId=n1')
         const res = await GET(req)
         expect(res.status).toBe(200)
-        // verify the fetch was called with decoded path
         const calledUrl = mockFetch.mock.calls[0][0]
         expect(calledUrl).toContain('user-123')
         expect(calledUrl).toContain('img.jpg')
     })
 })
 
-// ─── /api/upload-note-image ───────────────────────────────────────────────────
 describe('/api/upload-note-image POST', () => {
     let mockSupabase
     let POST
@@ -434,8 +422,8 @@ describe('/api/upload-note-image POST', () => {
             for (const m of ['select', 'eq', 'single']) obj[m] = vi.fn(() => obj)
             obj.single = vi.fn().mockResolvedValue(
                 callCount === 1
-                    ? { data: { owner_id: 'owner-1' }, error: null }   // note lookup
-                    : { data: { permission: 'view' }, error: null }     // share lookup
+                    ? { data: { owner_id: 'owner-1' }, error: null }
+                    : { data: { permission: 'view' }, error: null }
             )
             return obj
         })
@@ -493,7 +481,6 @@ describe('/api/upload-note-image POST', () => {
     })
 })
 
-// ─── /api/summarize-document ──────────────────────────────────────────────────
 describe('/api/summarize-document POST', () => {
     let mockSupabase
     let POST

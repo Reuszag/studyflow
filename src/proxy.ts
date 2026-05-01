@@ -27,21 +27,18 @@ export async function proxy(request: NextRequest) {
         }
     )
 
-    // Get the current user session
     const {
         data: { user },
     } = await supabase.auth.getUser()
 
     const { pathname } = request.nextUrl
 
-    // If user is NOT logged in and tries to access /dashboard → redirect to /login
     if (!user && pathname.startsWith('/dashboard')) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)
     }
 
-    // If user IS logged in and tries to access /login or /register → redirect to /dashboard
     if (user && (pathname === '/login' || pathname === '/register')) {
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard'

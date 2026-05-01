@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createNote, deleteNote, leaveSharedNote } from './actions'
+import { useNotification } from '@/lib/NotificationContext'
 
 interface NoteItem {
     id: string
@@ -18,6 +19,7 @@ interface NoteItem {
 
 export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initialShared }: { ownedNotes: NoteItem[]; sharedNotes: NoteItem[] }) {
     const router = useRouter()
+    const { showNotification, confirm } = useNotification()
     const [ownedNotes, setOwnedNotes] = useState<NoteItem[]>(initialOwned)
     const [sharedNotes, setSharedNotes] = useState<NoteItem[]>(initialShared)
     const [creating, setCreating] = useState(false)
@@ -98,7 +100,7 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
         try {
             const result = await createNote()
             if (result.error) {
-                setError(result.error)
+                showNotification(result.error, 'error')
                 setCreating(false)
                 return
             }
@@ -106,21 +108,23 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
                 router.push(`/dashboard/notes/${result.id}`)
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create note')
+            showNotification(err instanceof Error ? err.message : 'Failed to create note', 'error')
         }
         setCreating(false)
     }
 
     async function handleDelete(id: string, e: React.MouseEvent) {
         e.stopPropagation()
-        if (!confirm('Delete this note? This cannot be undone.')) return
+        const confirmed = await confirm('Delete this note? This cannot be undone.')
+        if (!confirmed) return
         await deleteNote(id)
         await fetchNotes()
     }
 
     async function handleLeave(id: string, e: React.MouseEvent) {
         e.stopPropagation()
-        if (!confirm('Remove this shared note from your list?')) return
+        const confirmed = await confirm('Remove this shared note from your list?')
+        if (!confirmed) return
         await leaveSharedNote(id)
         await fetchNotes()
     }
@@ -149,7 +153,6 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
                     border: '1px solid var(--card-border)',
                 }}
             >
-                {/* Shared badge + leave button */}
                 {!isOwned && (
                     <div className="absolute top-3 right-3 flex items-center gap-2">
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border" style={{ background: 'var(--active-nav-bg)', color: 'var(--active-nav-text)', borderColor: 'var(--active-nav-border)' }}>
@@ -168,7 +171,6 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
                     </div>
                 )}
 
-                {/* Delete button — owner only */}
                 {isOwned && (
                     <button
                         onClick={(e) => handleDelete(note.id, e)}
@@ -213,7 +215,6 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
 
     return (
         <div className="space-y-8">
-            {/* Create button */}
             <button
                 onClick={handleCreate}
                 disabled={creating}
@@ -235,7 +236,6 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
                 </p>
             )}
 
-            {/* Owned notes */}
             {ownedNotes.length > 0 && (
                 <div>
                     <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--muted-text)' }}>
@@ -249,7 +249,6 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
                 </div>
             )}
 
-            {/* Shared notes */}
             {sharedNotes.length > 0 && (
                 <div>
                     <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--muted-text)' }}>
@@ -263,7 +262,6 @@ export default function NoteList({ ownedNotes: initialOwned, sharedNotes: initia
                 </div>
             )}
 
-            {/* Empty state */}
             {ownedNotes.length === 0 && sharedNotes.length === 0 && (
                 <div className="text-center py-20 rounded-2xl border border-dashed" style={{ borderColor: 'var(--card-border)' }}>
                     <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: 'var(--overlay-soft)', color: 'var(--muted-text)' }}>

@@ -35,8 +35,6 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
 
   const canvasWidth = 800
   const canvasHeight = 500
-
-  // Redraw the canvas from strokes
   const redraw = useCallback((stks: Stroke[], current?: Stroke | null) => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -44,12 +42,8 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
     if (!ctx) return
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
-
-    // Draw background
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
-
-    // Draw initial image if exists
     if (initialImage) {
       const img = new window.Image()
       img.src = initialImage
@@ -93,13 +87,9 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
     ctx.stroke()
     ctx.restore()
   }
-
-  // Redraw on stroke changes
   useEffect(() => {
     redraw(strokes)
   }, [strokes, redraw])
-
-  // Load initial image
   useEffect(() => {
     if (initialImage) {
       const canvas = canvasRef.current
@@ -140,8 +130,6 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
     const pos = getPos(e)
     const updated = { ...currentStroke, points: [...currentStroke.points, pos] }
     setCurrentStroke(updated)
-
-    // Draw current stroke in real time
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -192,10 +180,7 @@ export default function DrawingCanvas({ onSave, onClose, initialImage, noteId, o
 
     setUploading(true)
     try {
-      // Redraw final state
       redraw(strokes)
-
-      // Convert to blob
       const blob = await new Promise<Blob | null>((resolve) => {
         canvas.toBlob(resolve, 'image/png')
       })

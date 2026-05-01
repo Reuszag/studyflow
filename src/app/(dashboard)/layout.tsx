@@ -43,9 +43,7 @@ export default async function DashboardLayout({
         <div className="flex min-h-screen transition-colors duration-300" style={{ background: 'var(--background)' }}>
             <Sidebar />
 
-            {/* Main content */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Top bar */}
                 <header
                     className="h-14 flex items-center justify-between px-6 sticky top-0 z-[100000] transition-colors duration-300 relative"
                     style={{
@@ -54,10 +52,8 @@ export default async function DashboardLayout({
                     }}
                 >
                     <div className="flex items-center gap-3">
-                        {/* Left side empty or reserved */}
                     </div>
 
-                    {/* Centered Clock */}
                     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                         <LiveClock />
                     </div>
@@ -68,7 +64,6 @@ export default async function DashboardLayout({
                     </div>
                 </header>
 
-                {/* Page content */}
                 <main className="flex-1 overflow-auto">
                     <DashboardClientWrapper>
                         {children}

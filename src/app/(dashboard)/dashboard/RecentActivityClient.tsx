@@ -48,7 +48,7 @@ export default function RecentActivityClient() {
     useEffect(() => {
         fetchActivityFeed()
 
-        // Set up auto-refresh every 30 seconds
+
         const interval = setInterval(fetchActivityFeed, 30000)
 
         return () => clearInterval(interval)

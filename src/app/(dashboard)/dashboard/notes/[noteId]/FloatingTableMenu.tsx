@@ -14,7 +14,7 @@ export default function FloatingTableMenu({ editor }: { editor: Editor | null })
 
     const update = () => {
       if (editor.isActive('table')) {
-        // Find the table DOM element
+
         const { state } = editor.view
         const { from } = state.selection
         const domAtPos = editor.view.domAtPos(from)
@@ -49,7 +49,7 @@ export default function FloatingTableMenu({ editor }: { editor: Editor | null })
     }
   }, [editor])
 
-  // Close menu on click outside
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {

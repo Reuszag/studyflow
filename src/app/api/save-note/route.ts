@@ -41,7 +41,6 @@ function normalizeImageUrls(content: object): object {
                             node.attrs.src = publicPrefix + decodeStoragePath(storagePath)
                         }
                     } catch {
-                        // Keep original if parsing fails
                     }
                 }
             }
@@ -54,7 +53,6 @@ function normalizeImageUrls(content: object): object {
     return copy
 }
 
-// Extract all image src URLs from TipTap JSON content
 function extractImageUrls(content: Record<string, unknown>): string[] {
     const urls: string[] = []
     type N = { type?: string; attrs?: Record<string, unknown>; content?: N[] }
@@ -71,7 +69,6 @@ function extractImageUrls(content: Record<string, unknown>): string[] {
     return urls
 }
 
-// Convert image URL to storage path (userId/filename)
 function urlToPath(url: string): string | null {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
     const publicPrefix = `${supabaseUrl}/storage/v1/object/public/note-images/`
@@ -84,7 +81,7 @@ function urlToPath(url: string): string | null {
             const params = new URLSearchParams(url.slice(proxyPrefix.length))
             const path = params.get('path')
             return path ? decodeStoragePath(path) : null
-        } catch { /* skip */ }
+        } catch { }
     }
     return null
 }
@@ -121,7 +118,6 @@ export async function POST(request: NextRequest) {
 
         const isOwner = noteRow.owner_id === user.id
         if (!isOwner) {
-            // Check for share permission
             const { data: share } = await supabase
                 .from('note_shares')
                 .select('permission')
@@ -140,7 +136,6 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Normalize signed URLs back to public URLs before persisting
         const normalizedContent = content ? normalizeImageUrls(content) : content
 
         if (allowDowngradeSave && !isOwner) {

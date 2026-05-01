@@ -15,7 +15,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setTheme] = useState<Theme>('dark')
     const [mounted, setMounted] = useState(false)
 
-    // Load saved theme on mount
     useEffect(() => {
         const saved = localStorage.getItem('studyflow-theme') as Theme | null
         if (saved === 'light' || saved === 'dark') {
@@ -24,7 +23,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setMounted(true)
     }, [])
 
-    // Apply class to <html> whenever theme changes
     useEffect(() => {
         if (!mounted) return
         const root = document.documentElement

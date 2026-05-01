@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { addTask, toggleTask, deleteTask, updateTaskStatus, archiveTask, unarchiveTask } from './actions'
+import { useNotification } from '@/lib/NotificationContext'
 
 type Task = {
     id: string
@@ -16,6 +17,7 @@ interface TaskBoardProps {
 }
 
 export default function TaskBoard({ initialTasks }: TaskBoardProps) {
+    const { showNotification, confirm } = useNotification()
     const [tasks, setTasks] = useState(initialTasks)
     const [isAdding, setIsAdding] = useState(false)
     const [formPriority, setFormPriority] = useState('medium')
@@ -23,14 +25,8 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
     const [plannedDate, setPlannedDate] = useState('')
     const [isCalendarOpen, setIsCalendarOpen] = useState(false)
     const [currentMonth, setCurrentMonth] = useState(new Date())
-    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
     const [isArchiveOpen, setIsArchiveOpen] = useState(false)
     const formRef = useRef<HTMLFormElement>(null)
-
-    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-        setToast({ message, type })
-        setTimeout(() => setToast(null), 3500)
-    }
 
     // Sync local state when server component passes down new tasks after a server action
     useEffect(() => {
@@ -40,15 +36,15 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
     const handleAddTask = async (formData: FormData) => {
         const title = (formData.get('title') as string)?.trim()
         if (title && tasks.some(t => t.title.toLowerCase() === title.toLowerCase())) {
-            showToast('A task with this name already exists!', 'error')
+            showNotification('A task with this name already exists!', 'error')
             return
         }
         setIsAdding(true)
         const result = await addTask(formData)
         if (result.error) {
-            showToast(result.error, 'error')
+            showNotification(result.error, 'error')
         } else {
-            showToast('Task created successfully!', 'success')
+            showNotification('Task created successfully!', 'success')
         }
         setIsAdding(false)
         setFormPriority('medium')
@@ -64,23 +60,24 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
         const result = await toggleTask(id, currentStatus)
         if (result.error) {
             setTasks(initialTasks)
-            showToast(result.error, 'error')
+            showNotification(result.error, 'error')
         } else {
-            showToast(`Task moved to ${newStatus === 'ongoing' ? 'On Going' : 'Completed'}`, 'success')
+            showNotification(`Task moved to ${newStatus === 'ongoing' ? 'On Going' : 'Completed'}`, 'success')
         }
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this task?')) return
+        const confirmed = await confirm('Are you sure you want to delete this task?')
+        if (!confirmed) return
 
         setTasks(prev => prev.filter(t => t.id !== id))
 
         const result = await deleteTask(id)
         if (result.error) {
             setTasks(initialTasks)
-            showToast(result.error, 'error')
+            showNotification(result.error, 'error')
         } else {
-            showToast('Task deleted successfully!', 'success')
+            showNotification('Task deleted successfully!', 'success')
         }
     }
 
@@ -89,9 +86,9 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
         const result = await archiveTask(id)
         if (result.error) {
             setTasks(initialTasks)
-            showToast(result.error, 'error')
+            showNotification(result.error, 'error')
         } else {
-            showToast('Task archived', 'success')
+            showNotification('Task archived', 'success')
         }
     }
 
@@ -100,9 +97,9 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
         const result = await unarchiveTask(id)
         if (result.error) {
             setTasks(initialTasks)
-            showToast(result.error, 'error')
+            showNotification(result.error, 'error')
         } else {
-            showToast('Task restored to On Going', 'success')
+            showNotification('Task restored to On Going', 'success')
         }
     }
 
@@ -136,10 +133,10 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
         const result = await updateTaskStatus(taskId, newStatus)
         if (result.error) {
             setTasks(initialTasks)
-            showToast(result.error, 'error')
+            showNotification(result.error, 'error')
         } else {
             const label = newStatus === 'ongoing' ? 'On Going' : newStatus === 'completed' ? 'Completed' : 'Archived'
-            showToast(`Task moved to ${label}`, 'success')
+            showNotification(`Task moved to ${label}`, 'success')
         }
     }
 
@@ -558,19 +555,6 @@ export default function TaskBoard({ initialTasks }: TaskBoardProps) {
                     </div>
                 )
             })()}
-
-            {/* Toast Notification */}
-            {toast && (
-                <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
-                    <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border ${toast.type === 'success'
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-emerald-900/20'
-                        : 'bg-red-500/10 border-red-500/20 text-red-400 shadow-red-900/20'
-                        }`}>
-                        <span className="text-xl">{toast.type === 'success' ? '🚀' : '⚠️'}</span>
-                        <span className="font-semibold text-sm">{toast.message}</span>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }

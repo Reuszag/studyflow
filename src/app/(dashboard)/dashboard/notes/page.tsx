@@ -13,14 +13,12 @@ export default async function NotesPage() {
         redirect('/login')
     }
 
-    // Fetch notes owned by the user
     const { data: ownedNotes } = await supabase
         .from('notes')
         .select('id, title, updated_at, created_at, owner_id')
         .eq('owner_id', user.id)
         .order('updated_at', { ascending: false })
 
-    // Fetch notes shared with the user
     const { data: sharedEntries } = await supabase
         .from('note_shares')
         .select('permission, notes(id, title, updated_at, created_at, owner_id)')

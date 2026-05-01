@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
         return new NextResponse('Missing file path', { status: 400 })
     }
 
-    // Download the file from Supabase Storage
     const { data, error } = await supabase.storage
         .from('documents')
         .download(filePath)
@@ -26,7 +25,6 @@ export async function GET(req: NextRequest) {
         return new NextResponse('File not found or access denied', { status: 404 })
     }
 
-    // Stream the file back to the client
     const buffer = await data.arrayBuffer()
     return new NextResponse(buffer, {
         headers: {

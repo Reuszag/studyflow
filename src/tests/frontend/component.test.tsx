@@ -5,7 +5,6 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 
-// ─── Mock Next.js modules ─────────────────────────────────────────────────────
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }))
@@ -14,7 +13,6 @@ vi.mock('next/link', () => ({
     default: ({ children, href }) => <a href={href}>{children}</a>,
 }))
 
-// ─── Mock Supabase client ─────────────────────────────────────────────────────
 vi.mock('@/lib/supabase/client', () => ({
     createClient: vi.fn(() => ({
         auth: {
@@ -35,7 +33,6 @@ vi.mock('@/lib/supabase/client', () => ({
     })),
 }))
 
-// ─── Mock reCAPTCHA ───────────────────────────────────────────────────────────
 vi.mock('react-google-recaptcha', () => ({
     default: React.forwardRef(({ onChange }, ref) => (
         <button
@@ -47,7 +44,6 @@ vi.mock('react-google-recaptcha', () => ({
     )),
 }))
 
-// ─── Mock GPA server actions ──────────────────────────────────────────────────
 vi.mock('@/app/(dashboard)/dashboard/gpa/actions', () => ({
     getSavedCalculations: vi.fn().mockResolvedValue([]),
     saveCalculation: vi.fn().mockResolvedValue({ id: 'calc-1', name: 'Test', gpa: 4.0, total_credits: 10, subjects: [], created_at: new Date().toISOString() }),
@@ -55,7 +51,6 @@ vi.mock('@/app/(dashboard)/dashboard/gpa/actions', () => ({
     deleteCalculation: vi.fn().mockResolvedValue(undefined),
 }))
 
-// ─── Mock Task server actions ─────────────────────────────────────────────────
 vi.mock('@/app/(dashboard)/dashboard/tasks/actions', () => ({
     addTask: vi.fn().mockResolvedValue({ error: null }),
     toggleTask: vi.fn().mockResolvedValue({ error: null }),
@@ -65,14 +60,12 @@ vi.mock('@/app/(dashboard)/dashboard/tasks/actions', () => ({
     unarchiveTask: vi.fn().mockResolvedValue({ error: null }),
 }))
 
-// ─── Mock Note server actions ─────────────────────────────────────────────────
 vi.mock('@/app/(dashboard)/dashboard/notes/actions', () => ({
     createNote: vi.fn().mockResolvedValue({ id: 'note-1', title: 'Untitled' }),
     deleteNote: vi.fn().mockResolvedValue({ error: null }),
     leaveSharedNote: vi.fn().mockResolvedValue({ error: null }),
 }))
 
-// ─── Mock localStorage ────────────────────────────────────────────────────────
 const localStorageMock = (() => {
     let store: Record<string, string> = {}
     return {
@@ -84,8 +77,8 @@ const localStorageMock = (() => {
 })()
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 
-// ─── ThemeToggle ──────────────────────────────────────────────────────────────
 import { ThemeProvider } from '@/lib/ThemeContext'
+import { NotificationProvider } from '@/lib/NotificationContext'
 import ThemeToggle from '@/app/components/ThemeToggle'
 
 describe('ThemeToggle', () => {
@@ -264,54 +257,54 @@ describe('TaskBoard', () => {
     })
 
     it('renders On Going and Completed column headers', () => {
-        render(<TaskBoard initialTasks={[]} />)
+        renderWithProviders(<TaskBoard initialTasks={[]} />)
         expect(screen.getByText('On Going')).toBeInTheDocument()
         expect(screen.getByText('Completed')).toBeInTheDocument()
     })
 
     it('renders tasks in correct columns', () => {
-        render(<TaskBoard initialTasks={sampleTasks} />)
+        renderWithProviders(<TaskBoard initialTasks={sampleTasks} />)
         expect(screen.getByText('Write tests')).toBeInTheDocument()
         expect(screen.getByText('Deploy app')).toBeInTheDocument()
     })
 
     it('shows Add Task button', () => {
-        render(<TaskBoard initialTasks={[]} />)
+        renderWithProviders(<TaskBoard initialTasks={[]} />)
         expect(screen.getByRole('button', { name: /add task/i })).toBeInTheDocument()
     })
 
     it('shows "Drop tasks here" in empty columns', () => {
-        render(<TaskBoard initialTasks={[]} />)
+        renderWithProviders(<TaskBoard initialTasks={[]} />)
         const dropZones = screen.getAllByText('Drop tasks here')
         expect(dropZones.length).toBe(2)
     })
 
     it('shows task count badge in column header', () => {
-        render(<TaskBoard initialTasks={sampleTasks} />)
+        renderWithProviders(<TaskBoard initialTasks={sampleTasks} />)
         // On Going has 1, Completed has 1
         const badges = screen.getAllByText('1')
         expect(badges.length).toBeGreaterThanOrEqual(2)
     })
 
     it('shows priority badge on tasks', () => {
-        render(<TaskBoard initialTasks={sampleTasks} />)
+        renderWithProviders(<TaskBoard initialTasks={sampleTasks} />)
         expect(screen.getByText('high')).toBeInTheDocument()
         expect(screen.getByText('medium')).toBeInTheDocument()
     })
 
     it('shows Archive section header', () => {
-        render(<TaskBoard initialTasks={sampleTasks} />)
+        renderWithProviders(<TaskBoard initialTasks={sampleTasks} />)
         expect(screen.getByText('Archive')).toBeInTheDocument()
     })
 
     it('shows archived task count in archive header', () => {
-        render(<TaskBoard initialTasks={sampleTasks} />)
+        renderWithProviders(<TaskBoard initialTasks={sampleTasks} />)
         // archive badge shows 1
         expect(screen.getAllByText('1').length).toBeGreaterThan(0)
     })
 
     it('expands archive section on click', async () => {
-        render(<TaskBoard initialTasks={sampleTasks} />)
+        renderWithProviders(<TaskBoard initialTasks={sampleTasks} />)
         const archiveBtn = screen.getByText('Archive').closest('button')
         await userEvent.click(archiveBtn)
         await waitFor(() => {
@@ -321,7 +314,7 @@ describe('TaskBoard', () => {
 
     it('shows error toast on duplicate task name', async () => {
         const { addTask } = await import('@/app/(dashboard)/dashboard/tasks/actions')
-        render(<TaskBoard initialTasks={sampleTasks} />)
+        renderWithProviders(<TaskBoard initialTasks={sampleTasks} />)
         const input = screen.getByPlaceholderText('What needs to be done?')
         await userEvent.type(input, 'Write tests')
         const submitBtn = screen.getByRole('button', { name: /add task/i })
@@ -345,27 +338,27 @@ describe('NoteList', () => {
     ]
 
     it('renders owned note titles', () => {
-        render(<NoteList ownedNotes={ownedNotes} sharedNotes={[]} />)
+        renderWithProviders(<NoteList ownedNotes={ownedNotes} sharedNotes={[]} />)
         expect(screen.getByText('My Note')).toBeInTheDocument()
     })
 
     it('renders shared note titles', () => {
-        render(<NoteList ownedNotes={[]} sharedNotes={sharedNotes} />)
+        renderWithProviders(<NoteList ownedNotes={[]} sharedNotes={sharedNotes} />)
         expect(screen.getByText('Shared Note')).toBeInTheDocument()
     })
 
     it('renders New Note button', () => {
-        render(<NoteList ownedNotes={[]} sharedNotes={[]} />)
+        renderWithProviders(<NoteList ownedNotes={[]} sharedNotes={[]} />)
         expect(screen.getByRole('button', { name: /new note/i })).toBeInTheDocument()
     })
 
     it('renders empty state when no notes', () => {
-        render(<NoteList ownedNotes={[]} sharedNotes={[]} />)
+        renderWithProviders(<NoteList ownedNotes={[]} sharedNotes={[]} />)
         expect(screen.getByText(/no notes yet/i)).toBeInTheDocument()
     })
 
     it('renders Shared with me section when shared notes exist', () => {
-        render(<NoteList ownedNotes={[]} sharedNotes={sharedNotes} />)
+        renderWithProviders(<NoteList ownedNotes={[]} sharedNotes={sharedNotes} />)
         expect(screen.getByText(/shared with me/i)).toBeInTheDocument()
     })
 })
@@ -462,56 +455,64 @@ describe('LoginPage', () => {
     })
 })
 
+function renderWithProviders(ui) {
+    return render(
+        <NotificationProvider>
+            <ThemeProvider>{ui}</ThemeProvider>
+        </NotificationProvider>
+    )
+}
+
 // ─── RegisterPage ─────────────────────────────────────────────────────────────
 import RegisterPage from '@/app/(auth)/register/page'
 
 describe('RegisterPage', () => {
     it('renders Create your account heading', () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         expect(screen.getByText('Create your account')).toBeInTheDocument()
     })
 
     it('renders email, password, confirm password inputs', () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument()
         expect(screen.getByPlaceholderText('Create a strong password')).toBeInTheDocument()
         expect(screen.getByPlaceholderText('Re-enter your password')).toBeInTheDocument()
     })
 
     it('Create Account button disabled before CAPTCHA', () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         const btn = screen.getByRole('button', { name: /create account/i })
         expect(btn).toBeDisabled()
     })
 
     it('shows password strength bar when typing password', async () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         await userEvent.type(screen.getByPlaceholderText('Create a strong password'), 'abc')
         expect(screen.getByText('Very weak')).toBeInTheDocument()
     })
 
     it('shows password rule checklist when typing', async () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         await userEvent.type(screen.getByPlaceholderText('Create a strong password'), 'a')
         expect(screen.getByText('At least 8 characters')).toBeInTheDocument()
         expect(screen.getByText('One uppercase letter (A-Z)')).toBeInTheDocument()
     })
 
     it('shows Very strong when all rules pass', async () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         await userEvent.type(screen.getByPlaceholderText('Create a strong password'), 'StrongPass1!')
         expect(screen.getByText('Very strong')).toBeInTheDocument()
     })
 
     it('shows passwords do not match inline error', async () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         await userEvent.type(screen.getByPlaceholderText('Create a strong password'), 'StrongPass1!')
         await userEvent.type(screen.getByPlaceholderText('Re-enter your password'), 'different')
         expect(screen.getByText('Passwords do not match')).toBeInTheDocument()
     })
 
     it('shows error when submitting with weak password', async () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         await userEvent.click(screen.getByTestId('recaptcha'))
         await userEvent.type(screen.getByPlaceholderText('you@example.com'), 'test@test.com')
         await userEvent.type(screen.getByPlaceholderText('Create a strong password'), 'weak')
@@ -523,7 +524,7 @@ describe('RegisterPage', () => {
     })
 
     it('shows CAPTCHA error when missing token', async () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         await userEvent.type(screen.getByPlaceholderText('Create a strong password'), 'StrongPass1!')
         await userEvent.type(screen.getByPlaceholderText('Re-enter your password'), 'StrongPass1!')
         fireEvent.submit(screen.getByRole('button', { name: /create account/i }).closest('form'))
@@ -533,7 +534,8 @@ describe('RegisterPage', () => {
     })
 
     it('renders Sign In link', () => {
-        renderWithTheme(<RegisterPage />)
+        renderWithProviders(<RegisterPage />)
         expect(screen.getByText('Sign In')).toBeInTheDocument()
     })
 })
+

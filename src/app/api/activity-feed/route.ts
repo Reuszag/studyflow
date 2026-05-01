@@ -13,7 +13,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Fetch recent activity data
+
         const { data: recentTasks } = await supabase
             .from('tasks')
             .select('title, created_at')

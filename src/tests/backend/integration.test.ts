@@ -1,12 +1,8 @@
 // @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// ─── Mock Next.js server-only modules ────────────────────────────────────────
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
-
-// ─── Supabase mock factory ────────────────────────────────────────────────────
-// Each test rebuilds the mock via makeSupabase() so tests are independent.
 
 type MockResult = { data?: unknown; error?: { message: string; code?: string } | null }
 
@@ -18,11 +14,9 @@ function makeSupabase(overrides: Record<string, unknown> = {}) {
         for (const m of methods) {
             obj[m] = vi.fn(() => Promise.resolve(result))
         }
-        // Allow chaining: .eq().eq() etc
         for (const m of methods) {
             ;(obj[m] as ReturnType<typeof vi.fn>).mockReturnValue(obj)
         }
-        // Terminal methods resolve the promise
         ;(obj.single as ReturnType<typeof vi.fn>).mockResolvedValue(result)
         ;(obj.limit as ReturnType<typeof vi.fn>).mockResolvedValue(result)
         ;(obj.order as ReturnType<typeof vi.fn>).mockResolvedValue(result)
@@ -50,7 +44,6 @@ function makeSupabase(overrides: Record<string, unknown> = {}) {
     }
 }
 
-// ─── Mock createClient to return our fake Supabase ───────────────────────────
 let mockSupabase = makeSupabase()
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -76,15 +69,10 @@ const {
     getProfile, updateProfile, changePassword,
 } = await import('@/app/(dashboard)/dashboard/profile/actions')
 
-// ─── Helper: rebuild mock before each test ───────────────────────────────────
 beforeEach(() => {
     mockSupabase = makeSupabase()
     vi.clearAllMocks()
 })
-
-// ═════════════════════════════════════════════════════════════════════════════
-// NOTES ACTIONS
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('createNote', () => {
     it('returns error when unauthenticated', async () => {

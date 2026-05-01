@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { deleteFile, getSignedUrl } from './actions'
+import { useNotification } from '@/lib/NotificationContext'
 import FilePreview from './FilePreview'
 
 type Document = {
@@ -33,6 +34,7 @@ function isSummarizable(doc: Document) {
 
 
 export default function StorageClient({ initialDocuments }: StorageClientProps) {
+    const { showNotification, confirm } = useNotification()
     const [documents, setDocuments] = useState(initialDocuments)
     const [uploading, setUploading] = useState(false)
     const [error, setError] = useState('')
@@ -112,17 +114,18 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
     }
 
     const handleDelete = async (id: string, filePath: string) => {
-        if (!confirm('Are you sure you want to delete this file?')) return
+        const confirmed = await confirm('Are you sure you want to delete this file?')
+        if (!confirmed) return
         setDocuments(prev => prev.filter(d => d.id !== id))
         const result = await deleteFile(id, filePath)
-        if (result.error) alert(result.error)
+        if (result.error) showNotification(result.error, 'error')
         router.refresh()
     }
 
     const handleDownload = async (filePath: string, fileName: string) => {
         const result = await getSignedUrl(filePath, true)
         if (result.error || !result.signedUrl) {
-            alert(result.error || 'Could not download file')
+            showNotification(result.error || 'Could not download file', 'error')
             return
         }
         const a = document.createElement('a')
@@ -136,7 +139,7 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
     const handlePreview = async (doc: Document) => {
         const result = await getSignedUrl(doc.file_path, false)
         if (result.error || !result.signedUrl) {
-            alert(result.error || 'Could not generate preview link')
+            showNotification(result.error || 'Could not generate preview link', 'error')
             return
         }
         setPreviewDoc({
@@ -161,13 +164,13 @@ export default function StorageClient({ initialDocuments }: StorageClientProps) 
             })
             const data = await res.json()
             if (!res.ok || data.error) {
-                alert(data.error || 'Summarization failed')
+                showNotification(data.error || 'Summarization failed', 'error')
             } else if (data.newDoc) {
                 setDocuments(prev => [data.newDoc as Document, ...prev])
                 router.refresh()
             }
         } catch {
-            alert('Network error during summarization')
+            showNotification('Network error during summarization', 'error')
         } finally {
             setSummarizingId(null)
         }

@@ -30,7 +30,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
     const [showAvatarMenu, setShowAvatarMenu] = useState(false)
     const [showImagePreview, setShowImagePreview] = useState(false)
 
-    // Change password state
     const [showPasswordSection, setShowPasswordSection] = useState(false)
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -215,7 +214,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
 
     return (
         <>
-            {/* Image Preview Modal */}
             {showImagePreview && avatarUrl && (
                 <div
                     className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center cursor-pointer backdrop-blur-sm"
@@ -239,7 +237,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
             )}
 
             <form onSubmit={handleSave} className="space-y-6">
-                {/* Avatar Section */}
                 <div className="flex flex-col items-center gap-3">
                     <div
                         className={`w-24 h-24 rounded-full overflow-hidden border-2 transition ${
@@ -262,7 +259,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                         )}
                     </div>
 
-                    {/* Avatar actions dropdown */}
                     <div className="relative" ref={menuRef}>
                         <button
                             type="button"
@@ -311,7 +307,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     <p className="text-xs" style={{ color: 'var(--text-quaternary)' }}>JPEG, PNG, WebP, or GIF. Max 2MB.</p>
                 </div>
 
-                {/* Email (read-only) */}
                 <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Email</label>
                     <input
@@ -324,7 +319,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     <p className="text-xs mt-1" style={{ color: 'var(--muted-text)' }}>Email cannot be changed here.</p>
                 </div>
 
-                {/* Full Name */}
                 <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--label-text)' }}>Full Name</label>
                     <input
@@ -354,7 +348,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
 
                     {showPasswordSection && (
                         <div className="px-4 pb-4 pt-3 space-y-3" style={{ background: 'var(--overlay-soft)' }}>
-                            {/* Current Password */}
                             <div>
                                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--label-text)' }}>Current Password</label>
                                 <div className="relative">
@@ -432,7 +425,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     )}
                 </div>
 
-                {/* Messages */}
                 {message && (
                     <p className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 px-4 py-2.5 rounded-xl">
                         {message}
@@ -444,7 +436,6 @@ export default function ProfileForm({ profile, email }: ProfileFormProps) {
                     </p>
                 )}
 
-                {/* Buttons */}
                 <div className="flex gap-3">
                     <button
                         type="submit"
